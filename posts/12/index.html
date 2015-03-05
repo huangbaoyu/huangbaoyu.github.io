@@ -1,0 +1,1207 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/12">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/07/02/ios-swift-protocol/">Swift协议基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-02T14:09:11+08:00" pubdate data-updated="true">Jul 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/07/02/ios-swift-protocol/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift的Protocol(协议)与Objective-C的协议一样，用于定义一系列的特定任务和功能的集合。Protocol自身并不提供这些任务的实现，只是描述实现看起来应该是什么样的。类、结构体或枚举可以实现一个Protocol，并提供Protocol中任务和功能的具体实现。Protocol可以要求这些实现类型有指定的实例属性、实例方法、类型方法、操作符和下标等。</p>
+
+<p>Protocol的语法如下所示:</p>
+
+<pre><code>protocol SomeProtocol {
+    // 协议定义
+}
+</code></pre>
+
+<p>类、结构体、枚举可以同时实现多个Protocol，如下所示:</p>
+
+<pre><code>struct SomeStructure: SomeProtocol, AnotherProcotol {
+    // 协议定义
+}
+</code></pre>
+
+<p>需要注意的是，子类在实现Protocol时，需要把父类写在前面，后面再跟上Protocol列表。</p>
+
+<p>我们下面介绍Protocol可以定义的一些功能需求</p>
+
+<h2>属性</h2>
+
+<p>Protocol可以要求实现类型提供指定名称和类型的实例属性或类型属性。Protocol不指定属性是存储属性还是计算属性，它只定义属性名和类型。Protocol也可以指定每个属性是只读的还是可读写的。</p>
+
+<p>如果Protocol要求属性是可读写的，那么这个属性不能是常量存储属性或者只读的计算属性；如果Protocol只是要求属性是可读的，则这个属性可以是任何类型的属性，这种情况下我们的实现代码同样可以指定属性为可写的。通常情况下，在Protocol中属性一般定义为变量，具体语法如下所示：</p>
+
+<pre><code>protocol SomeProtocol {
+    var mustBeSettable: Int { get set }
+    var doesNotNeedToBeSettable: Int { get }
+    class var someTypeProperty: Int { get set }
+}
+</code></pre>
+
+<p>如果是类型属性，我们需要在前面加上class，即便是结构体可枚举来实现这个Protocol，也是一样。如上面代码所示。</p>
+
+<p>代码清单1是一个详细的例子，定义了一个协议FullyNamed，其中声明了fullName属性，而在其两个个体的实现类型中，将fullName实现为不同的属性类型</p>
+
+<h6>代码清单1</h6>
+
+<pre><code>protocol FullyNamed {
+    var fullName: String { get }
+}
+
+struct Person: FullyNamed {
+    var fullName: String        // 可读写存储属性
+}
+
+class Sharship: FullyNamed {
+
+    var prefix: String?
+    var name: String?
+
+    var fullName: String {      // 只读的计算属性
+    return (prefix ? prefix! + " " : "") + name
+    }
+}
+</code></pre>
+
+<h2>方法</h2>
+
+<p>在Protocol中声明方法与在类中定义类似，只是没有实现体。另外声明方法是使用可变参数也是可以的，唯一的不同是在Protocol的方法声明中不能指定默认值。</p>
+
+<p>与属性声明一样，如果是类型方法，需要加上class前缀。方法的声明及实现类型的实现如代码清单2所示：</p>
+
+<pre><code>protocol RandomNumberGenerator {
+    func random() -&gt; Double
+}
+
+
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -&gt; Double {
+        lastRandom = ((lastRandom * a + c) % m)
+        return lastRandom / m
+    }
+}
+let generator = LinearCongruentialGenerator()
+
+generator.random()      // 0.37464991998171
+</code></pre>
+
+<p>另外，如果我们需要在方法中修改实例，则在方法前添加mutating关键字，与结构体中方法的定义是一样的。需要注意的是，只有在结构体和枚举的实现中才需要加mutating，类的实现是不需要的。</p>
+
+<h2>该Protocol做为类型</h2>
+
+<p>Protocol可以作为一种类型在代码中使用。因为它是一种类型，所以在很多情况下都可以使用，包括</p>
+
+<ol>
+<li>作为函数、方法、初始化方法的参数或返回值</li>
+<li>作为常量、变量或属性的类型</li>
+<li>作为数组、字典或其它容器的元素</li>
+</ol>
+
+
+<p>基于此，Protocol也可以放入集合中，如数组、字典等。</p>
+
+<p>下面是将Protocol作为类型的例子</p>
+
+<pre><code>class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init (sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+
+    func roll() -&gt; Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+
+// 具体使用
+var dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+</code></pre>
+
+<h2>代理(Delegation)</h2>
+
+<p>Swift与Objective-C的代理一样，允许将一个类或结构体的一些处理放到另外一个类型中(代理类)。Swift中代理模式的实现就是通过定义一个Protocol来封装代理方法，然后具体的实现类来实现这些代理方法。代理可以用于响应特定的行为，或者从外部资源获取数据，而不需要知道这些资源的类型。</p>
+
+<p>如下是一个实现UITableView代理的简单例子</p>
+
+<pre><code>class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    var tableView: UITableView?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+
+        tableView = UITableView(frame: self.view.bounds, style: UITableViewStyle.Plain)
+        tableView!.delegate = self
+        tableView!.dataSource = self
+    }
+
+    // 实现UITableViewDataSource
+
+    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -&gt; Int {
+        return 20
+    }
+
+    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -&gt; UITableViewCell! {
+        return nil
+    }
+}
+</code></pre>
+
+<h2>在扩展中实现Protocol</h2>
+
+<p>如果我们想让某个已存在的类型(我们没有源码的情况下)实现某个Protocol，则可以借助扩展。当类型的扩展实现了Protocol时，该类会自动实现Protocol(听着有点绕口)。但如果类型已经实现了Protocol的所有必须的方法(类型未采用Protocol)，这种情况下，若想让类型采用Protocol，则可以使用一个空的扩展来声明类型采用Protocol。如下代码所示：</p>
+
+<pre><code>protocol TextRepresentable {
+    func asText() -&gt; String
+}
+
+struct Hamster {
+    var name: String
+    func asText() -&gt; String {
+        return "A Hamster"
+    }
+}
+
+extension Hamster : TextRepresentable {}
+</code></pre>
+
+<h2>Protocol继承</h2>
+
+<p>一个Protocol可以继承自一个或多个Protocol，并在自己的实现中添加更多的功能需求。Protocol继承的语法与类型继承是一样的，其语法如下所示：</p>
+
+<pre><code>protocol InheritingProtocol : SomeProtocol, AnotherProtocol {
+
+}
+</code></pre>
+
+<p>在上面的例子中，所有实现子InheritingProtocol的类型都必须实现InheritingProtocol、SomeProtocol、AnotherProtocol三者中所有的必要功能。</p>
+
+<h2>Protocol组合</h2>
+
+<p>让一个类型同时实现多个Protocol是很有用的。这种情况下，我们可以使用Protocol组合来将多个Protocol组合成一个整体。其语法如下所示：</p>
+
+<pre><code>protocol&lt;SomeProtocol, AnotherProtocol&gt;
+</code></pre>
+
+<p>我们可以将多个Protocol放在&lt;>中，在使用时，我们将其当成一个整体来处理，这种组合的实际含义是：任何同时实现&lt;>所有Protocol的类型。让我们看看下面的例子：</p>
+
+<pre><code>protocol P1 {
+    var variable1 : String { get }
+}
+
+protocol P2 {
+    var variable2 : Int { get }
+}
+
+struct MyStruct : P1, P2 {
+    var variable1: String
+    var variable2: Int
+}
+
+func funcWithProtocols(protocols: protocol&lt;P1, P2&gt;) {
+
+}
+
+let st = MyStruct(variable1: "v", variable2: 2)
+
+funcWithProtocols(st)
+</code></pre>
+
+<p>需要注意的是，Protocol组合并没有定义一个新的永久的Protocol类型，它仅仅是定义了一个临时的本地Protocol，该Protocol包含了组合中所有的功能。</p>
+
+<h2>检查Protocol的一致性</h2>
+
+<p>我们可以使用is操作符来检查Protocol的一致性，用as操作符来作Protocol转换。</p>
+
+<ol>
+<li>如果is操作符返回true，则一个实例实现了protocol，否则没有</li>
+<li>as?操作符返回protocol类型的可选值，如果实例没有实现protocol，则返回nil</li>
+<li>as操作符强制作类型转换，如果实例没有实现protocol，则引发一个错误</li>
+</ol>
+
+
+<p>需要注意的是，只有当protocol使用@objc属性标记时，才可以检查其一致性。@objc属性表明protocol应该暴露给Objective-C代码。但即使我们的代码不与Objective-C交互，如果需要对protocol进行一致性检测，也需要使用这个属性。另外@objc标明的protocol只能被类实现，而不能被结构体或枚举实现。</p>
+
+<p>我们举个具体的例子：</p>
+
+<pre><code>@objc protocol HasArea {
+    var area: Double { get }
+}
+
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+
+let objects: AnyObject[] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+
+for object : AnyObject in objects {
+    if let objectWithArea = object as? HasArea {
+        println("Area is \(objectWithArea.area)")
+    } else {
+        println("Something that doesn't have an area")
+    }
+}
+
+// Area is 12.5663708
+// Area is 243610.0
+// Something that doesn't have an area
+</code></pre>
+
+<h2>可选需求</h2>
+
+<p>与Objective-C类似，Swift的Protocol可以定义一些可选的需求，这些需求在实现类型中可以选择性的实现。我们使用@optional修饰符来定义这些需求。</p>
+
+<p>一个可选的需求可以通过可选链来实现，这个可选链可以满足当某个类型没有实现所采用的Protocol的可选需求。这种调用的基本语法如下：</p>
+
+<pre><code>someOptionalMethod?(someArgument)
+</code></pre>
+
+<p>另外，可选的方法如果有返回值，总是返回一个可选值，以满足可能未被实现的需求。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-extension/">Swift扩展(Extension)基础</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T20:54:59+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-extension/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>扩展(Extension)用于为已存在的类、结构体或枚举添加新的功能。它类似于Objecitve-C中的分类，不同的是Swift的扩展没有名字</p>
+
+<p>Swift的扩展可以做以下事情：</p>
+
+<ul>
+<li><p> 添加计算属性和静态计算属性</p></li>
+<li><p> 定义实例方法和类型方法</p></li>
+<li><p> 提供新的初始化方法</p></li>
+<li><p> 定义下标操作符</p></li>
+<li><p> 定义并使用新的嵌套类型</p></li>
+<li><p> 让已存在类型实现一个协议</p></li>
+</ul>
+
+
+<p>在定义类型的扩展后，访扩展中的功能可以用于类型所有已存在的实例中，即使这些实例在扩展之前定义。</p>
+
+<p>我们使用关键字extension来声明一个扩展，一个扩展可以让类型实现一个或多个协议，如代码清单1所示：</p>
+
+<h6>代码清单1：</h6>
+
+<pre><code>extension SomeType: SomeProtocol, AnotherProtocol {
+    // implementation of protocol requirement goes here
+}
+</code></pre>
+
+<p>下面我们分别介绍如何去扩展一个已有类型的各种功能</p>
+
+<h2>计算属性</h2>
+
+<p>扩展可以添加实例计算属性和类型计算属性。如代码清单2所示：</p>
+
+<h6>代码清单2：</h6>
+
+<pre><code>extension Double {
+    var km: Double {return self * 1_000.0}
+    var m: Double { return self }
+    var cm: Double { return self / 100.0 }
+    var mm: Double { return self / 1_000.0 }
+    var ft: Double { return self / 3.28084 }
+}
+
+let onInch = 25.4.mm        // 0.0254
+let threeFeet = 3.ft        // 0.914399970739201
+</code></pre>
+
+<p>上例扩展了Double，并定义了一些实例计算属性。我们可以将其用于Double的实例，也可以用于Double类型的字面值。</p>
+
+<p>需要注意的是，扩展可以添加新的计算属性，但不能添加存储属性，也不能给已存在的属性添加观察者</p>
+
+<h2>初始化方法</h2>
+
+<p>扩展可以为已存在类型添加新的初始化方法。这可以让我们扩展某一类型以接受我们自定义的类型作为它的初始化方法，或者为现有类型提供额外的初始化方法。</p>
+
+<p>扩展可以为类添加新的便捷初始化方法，但不能添加命名初始化方法(designated initializers)和析构方法，这两者必须由类型的原始实现来提供。</p>
+
+<p>代码清单3定义了Rect类型，并通过扩展为其定义了一个新的初始化方法</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>struct Size {
+    var width = 0.0, height = 0.0
+}
+
+struct Point {
+    var x = 0.0, y = 0.0
+}
+
+struct Rect {
+    var origin = Point()
+    var size = Size()
+}
+
+let defaultRect = Rect()
+let memeberwiseRect = Rect(origin: Point(x: 1.0, y: 2.0), size: Size(width: 5.0, height: 10.0))
+
+extension Rect {
+    init (center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - size.height / 2
+        self.init(origin: Point(x: originX, y: originY), size:size)
+    }
+}
+
+let centerRect = Rect(center: Point(x: 20.0, y: 3.0), size: Size(width: 10.0, height: 40.0))
+</code></pre>
+
+<p>需要注意的是，如果我们提供新的初始化方法，仍然需要确保在初始化方法结束前初始化实例的所有常量和变量。</p>
+
+<p>另外，如果我们扩展的类型的所有存储属性都有默认值，而没有定义初始化方法时，我们可以在扩展的初始化方法中调用默认的初始化方法和</p>
+
+<h2>方法</h2>
+
+<p>扩展可以为已存在类型添加新的实例方法和类型方法。对于结构体和枚举类型而言，如果扩展的方法需要修改self或者它的属性的话，需要将实例方法标记为mutating(与结构体和枚举的原始实现相同)。</p>
+
+<h6>代码清单4：演示了扩展方法的定义</h6>
+
+<pre><code>extension Int {
+    func repetitions(task: () -&gt; ()) {
+        for i in  0..self {
+            task()
+        }
+    }
+
+    mutating func square() {        // mutating
+        self = self * self
+    }
+}
+
+var someInt = 3
+someInt.square()
+</code></pre>
+
+<h2>下标</h2>
+
+<p>扩展可以为已存在类型添加新的下标。例如我们想为Int类型添加一个下标操作，指定下标为n时，返回数字从右侧起第n个数字，即</p>
+
+<ul>
+<li><p> 123456789[0] = 9</p></li>
+<li><p> 123456789[1] = 8</p></li>
+<li><p> …</p></li>
+</ul>
+
+
+<p>代码清单5给出了相应的实现</p>
+
+<h6>代码清单5</h6>
+
+<pre><code>extension Int {
+    subscript(digitIndex: Int) -&gt; Int {
+        var decimalBase = 1
+            for _ in 1...digitIndex {
+                decimalBase * 10
+            }
+            return (self / decimalBase) % 10
+    }
+}
+
+8738793219[0]   // 9
+8738793219[1]   // 1
+8738793219[2]   // 2
+8738793219[8]   // 7
+</code></pre>
+
+<h2>嵌套类型</h2>
+
+<p>扩展可以为已存在类型添加新的嵌套类型，如代码清单6所示</p>
+
+<h6>代码清单6：</h6>
+
+<pre><code>extension Character {
+    enum Kind {
+        case Vowel, Consonant, Other
+    }
+
+    var kind:Kind {
+    switch String(self).lowercaseString {
+        case "a", "e", "i", "o", "u":
+            return .Vowel
+        case "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n",
+             "p", "q", "r", "s", "t", "v", "w", "x", "y", "z":
+            return .Consonant
+        default:
+            return .Other
+    }
+    }
+}
+</code></pre>
+
+<p>上面为Character类型添加了一个嵌套枚举，以表示字符的类型。定义之后，嵌套类型就可以用于Character的值了。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-property/">Swift属性Property</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T20:34:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-property/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Swift的属性与Objective-C中的属性是一样的，不同的是Swift细化了属性的类型，另外除了类之外，结构体和枚举也可以有属性。</p>
+
+<p>Swift中有这么几种属性：</p>
+
+<ol>
+<li>存储属性(Stored properties)：存储实例的常量和变量，与类、结构体、枚举的实例相关</li>
+<li>计算属性(Computed properties)：通过某种方式计算出来的属性，只与类、结构体的实例相关，枚举没有计算属性</li>
+<li>类型属性(type properties)：与类型自身相关。</li>
+</ol>
+
+
+<p>另外，我们可以定义属性观察者来监听属性值的改变，以执行一些额外的操作。属性观察者可以添加到自定义的存储属性上，也可以添加到父类继承而来的属性上。</p>
+
+<p>下面我们将详细介绍这些属性</p>
+
+<h2>存储属性</h2>
+
+<p>存储属性是最简单的属性，它作为类或结构体实例的一部分，用于存储常量和变量。</p>
+
+<p>关于存储属性，有以下几点：</p>
+
+<ol>
+<li>我们可以给存储属性提供一个默认值，也可以在初始化方法中对其进行初始化，即使是常量型属性，也可以这样做。</li>
+<li>如果创建一个常量结构体实例，我们不能修改该实例的变量型存储属性。这是因为结构体是值类型，当一个值类型的实例标记为常量时，它的所有属性也是常量。由于类是引用类型，所以该条不适用于类类型。</li>
+<li>如果我们希望属性在使用到的时候再初始化，则可以使用懒惰存储属性(lazy stored property，使用修饰符@lazy)。懒惰存储属性总是应该定义为变量，因为常量型属性总需要在初始化方法完成之前初始化。</li>
+<li>与Objective-C不同的是，Swift中的属性不需要一个与之对应的成员变量，我们不能直接访问属性的后备存储(backing store)。这种方式避免了混淆不同上下文环境下对值的访问，并将属性简化为单一、明确的声明。</li>
+</ol>
+
+
+<h6>代码清单1：</h6>
+
+<pre><code>struct FixedLengthRange {
+    var firstValue:Int      // 变量存储属性
+    let length:Int          // 常量存储属性
+}
+
+var item1 = FixedLengthRange(firstValue: 10, length: 10)
+
+let item2 = FixedLengthRange(firstValue: 10, length: 10)
+//item2.firstValue = 6        // 错误：不能修改常量结构体实例的存储属性
+</code></pre>
+
+<h2>计算属性</h2>
+
+<p>计算属性并不存储实际的值，而是提供一个getter和一个可选的setter来间接获取和设置其它属性。</p>
+
+<p>关于计算属性，有以下几点：</p>
+
+<ol>
+<li>如果计算属性的setter没有定义一个新值的变量名，则默认为newValue</li>
+<li>如果只提供getter，而不提供setter，则该计算属性为只读属性</li>
+<li>我们只能声明变量型只读属性，因为它们的值不是固定的</li>
+<li>如果计算属性是只读的，则可以不使用get{}</li>
+</ol>
+
+
+<p>计算属性的实例如代码清单2：</p>
+
+<h6>代码清单2：</h6>
+
+<pre><code>struct Point {
+    var x = 0.0, y = 0.0
+}
+
+struct Size {
+    var width = 0.0, height = 0.0
+}
+
+struct Rect {
+    var origin = Point()
+    var size = Size()
+
+    var center:Point {          // 计算属性
+    get {
+        let centerX = origin.x + (size.width / 2)
+        let centerY = origin.y + (size.height / 2)
+        return Point(x: centerX, y: centerY)
+    }
+    set(newCenter) {            // 若不提供新值变量名，则默认为newValue
+        origin.x = newCenter.x - size.width / 2
+        origin.y = newCenter.y - size.height / 2
+    }
+    }
+
+    var maxX:Float {        // 只读属性，省略get{}
+        return Float(origin.x) + Float(size.width)
+    }
+}
+
+var square = Rect(origin:Point(x: 0.0, y: 0.0), size:Size(width:100, height:100))
+
+let initialSquareCenter = square.center
+square.center = Point(x: 15.0, y:15.0)
+square.maxX
+</code></pre>
+
+<h2>类型属性</h2>
+
+<p>类型属性是与类型相关联的，而不是与类型的实例相关联。对于某一类型的所有实例，类型属性都只有一份拷贝。对于值类型，我们可以定义存储类型属性和计算类型属性。对于类，我们只能定义计算类型属性。和实例属性不同的是，我们总是需要给存储类型属性一个默认值。这是因为类型没有初始化方法来初始化类型属性。</p>
+
+<p>类型属性的访问和设置与实例属性一样，不一样的是，类型属性通过类型来获取和设置，而不是类型的实例</p>
+
+<h6>代码清单3</h6>
+
+<pre><code>struct AudioChannel {
+    static let threaholdLevel = 10
+    static var maxInputLevelForAllChannels = 0
+
+    var currentLevel:Int = 0 {
+    didSet{
+        if currentLevel &gt; AudioChannel.threaholdLevel {
+            currentLevel = AudioChannel.threaholdLevel
+        }
+
+        if currentLevel &gt; AudioChannel.maxInputLevelForAllChannels {
+            AudioChannel.maxInputLevelForAllChannels = currentLevel
+        }
+    }
+    }
+}
+
+var leftChannel = AudioChannel()
+var rightChannel = AudioChannel()
+
+leftChannel.currentLevel = 7
+
+println(leftChannel.currentLevel)       // 7
+println(AudioChannel.maxInputLevelForAllChannels)   // 7
+
+rightChannel.currentLevel = 11
+println(rightChannel.currentLevel)      // 10
+println(AudioChannel.maxInputLevelForAllChannels)   // 10
+</code></pre>
+
+<h2>属性观察者</h2>
+
+<p>属性观察者用于监听和响应属性值的变化。在每次设置属性值的时候都会调用属性观察者方法，即使新旧值是一样的。我们可以为任何存储属性定义属性观察者，除了懒惰存储属性。我们同样可以在子类中给继承而来的属性添加观察者。</p>
+
+<p>对于计算属性，我们不需要定义属性观察者，因为我们可以在计算属性的setter中直接观察并响应这种值的变化。</p>
+
+<p>我们通过设置以下观察方法来定义观察者</p>
+
+<ol>
+<li>willSet：在属性值被存储之前设置。此时新属性值作为一个常量参数被传入。该参数名默认为newValue，我们可以自己定义该参数名</li>
+<li>didSet：在新属性值被存储后立即调用。与willSet相同，此时传入的是属性的旧值，默认参数名为oldValue。</li>
+</ol>
+
+
+<p>willSet与didSet只有在属性第一次被设置时才会调用，在初始化时，不会去调用这些监听方法。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-closures-2/">Swift闭包二：循环引用</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T19:10:38+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-closures-2/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>我们在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures/">闭包的基础概念</a>中讲到闭包是引用类型的，因此，与Objective-C的block一样，可能导致循环引用的问题。</p>
+
+<h2>问题的产生</h2>
+
+<p>当我们给一个类指定一个闭包属性时，这个类的实例便包含了闭包的一个引用。如果在这个闭包中，又引用了类实例本身，这是闭包便创建了一个指向类实例的强引用，这种情况下，又产生了循环引用。</p>
+
+<p>如代码清单1所示：HTMLElement类定义了一个闭包属性asHTML。在这个闭包中引用了self，即闭包捕获了self，这就意味着闭包维护了一个指向HTMLElement实例的强引用。这样就在两者间创建了一个强引用循环。</p>
+
+<h6>代码清单1：闭包循环引用</h6>
+
+<pre><code>class HTMLElement {
+
+    let name:String
+    let text:String?
+
+    @lazy var asHTML:() -&gt; String = {
+        if let text = self.text {
+            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
+        } else {
+            return "&lt;\(self.name) /&gt;"
+        }
+    }
+
+    init(name:String, text:String? = nil) {
+        self.name = name
+        self.text = text
+    }
+
+    deinit {
+        println("\(name) is being deinitialized")
+    }
+}
+</code></pre>
+
+<h2>解决方案</h2>
+
+<p>我们可以通过“捕获列表”来解决这种循环引用问题。“捕获列表”定义了在闭包内部捕获的引用类型的使用规则。与两个类之间的强引用循环一样，我们声明每一个捕获引用为weak或者unowned引用。选择weak或者unowned依赖于两者之间的关系。</p>
+
+<p>一个“捕获列表项”是一个weak(unowned)—类实例引用对。它们放在[]中，项与项之间使用“,”号隔开。</p>
+
+<p>当闭包和捕获实例总是相互引用，且两者同时释放时，我们将“捕获引用”设置为unowned。如果“捕获引用”可能在某个点被设置成nil，则将其设置为weak。weak引用通常都是optional类型，当引用的实例被释放时，被设置成nil。</p>
+
+<p>在代码清单1中，我们可以用unowned来处理这种循环引用问题。如代码清单2所示：</p>
+
+<h6>代码清单2：unowned引用</h6>
+
+<pre><code>class HTMLElement {
+
+    let name:String
+    let text:String?
+
+    @lazy var asHTML:() -&gt; String = {
+        [unowned self] in
+        if let text = self.text {
+            return "&lt;\(self.name)]]&gt;\(self.text)&lt;/\(self.name)&gt;"
+        } else {
+            return "&lt;\(self.name) /&gt;"
+        }
+    }
+
+    init(name:String, text:String? = nil) {
+        self.name = name
+        self.text = text
+    }
+
+    deinit {
+        println("\(name) is being deinitialized")
+    }
+}
+</code></pre>
+
+<p>在这种情况下，闭包维护了HTMLElement实例的一个unowned引用，而不再是一个强引用。</p>
+
+<p>注：虽然在闭包中多次引用了self，但闭包只会维护HTMLElement实例的一个引用</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/06/27/ios-swift-closures/">Swift闭包一：闭包基础概念</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-27T16:25:56+08:00" pubdate data-updated="true">Jun 27<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/06/27/ios-swift-closures/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>熟悉Objective-C的朋友一定知道Objective-C中的block，iOS在6.0后开始大量使用block。而在swift中，也提供了类似的功能：Closures(在Java等语言中翻译为“闭包”)。</p>
+
+<p>Closures是自包含的功能块。它可以捕获和存储其所在上下文的常量和变量的引用。全局函数和嵌套函数其实都是闭包。闭包有以下三种形式：</p>
+
+<ol>
+<li>全局函数：有函数名，但不能获取任何外部值</li>
+<li>嵌套函数：有函数名，同时可以从其上下文中捕获值</li>
+<li>闭包表达式：以一种轻量级的语法定义的未命名闭包，可以从其上下文中捕获值</li>
+</ol>
+
+
+<p>swift对闭包表达式作了一些优化处理，主要包括：</p>
+
+<ol>
+<li>从上下方中推断出参数和返回值</li>
+<li>可以从单一表达式闭包中隐式返回</li>
+<li>速记(Shorthand)参数名</li>
+<li>尾随闭包语法</li>
+</ol>
+
+
+<p>下面会对这几点分别说明</p>
+
+<h2>闭包表达式</h2>
+
+<p>闭包表达式提供了一种更加简洁、专注的方式来实现内嵌函数的功能。闭包表达式的通用格式如下</p>
+
+<pre><code>{(parameters) -&gt; return type in
+    statement   
+}
+</code></pre>
+
+<p>闭包的参数可以是常量、变量、inout、可变参数列表、元组，但是不能提供默认值。返回值可以是通用类型，也可以是元组。闭包实现体位于in关键字后面，该关键字是闭包参数和返回值的声明和实现体的分界。</p>
+
+<h6>代码清单1: 使用sort函数对数组进行排序</h6>
+
+<pre><code>let names = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
+
+// 方法1：使用普通函数(或内嵌函数)提供排序功能
+func backwards(s1:String, s2:String) -&gt; Bool {
+    return s1 &gt; s2
+}
+
+var reversed = sort(names, backwards)
+
+// 方法2：使用闭包表达式提供排序功能
+reversed = sort(names, {
+        (s1:String, s2:String) -&gt; Bool in
+            return s1 &gt; s2
+    })
+
+// 方法3：类型推断,省略闭包表达式的参数及返回类型
+reversed = sort(names, { s1, s2 in return s1 &gt; s2})
+
+// 方法4：单一表达式：省略return关键字
+reversed = sort(names, { s1, s2 in s1 &gt; s2 })
+
+// 方法5：速记参数名
+reversed = sort(names, { $0 &gt; $1 })
+
+// 方法6：操作符函数
+reversed = sort(names, &gt;)
+</code></pre>
+
+<p>swift标准库提供了sort用来对数据进行排序，它包含两个参数：</p>
+
+<ol>
+<li>待排序的已知类型的数组</li>
+<li>排序函数(闭包)：带有两个类型相同的参数，并返回Bool值来告知第一个参数是显示排在第二个参数之前还是之后。</li>
+</ol>
+
+
+<p>代码清单1提供了几种方式来实现sort的排序函数</p>
+
+<ol>
+<li>方法1：使用普通函数(嵌套函数)，这种方法略显示复杂，且代码不够紧凑</li>
+<li>方法2：内联闭包表达式，参数和返回值都位于大括号内，而不是外部</li>
+<li>方法3：借助于swift强大的类型推断功能，我们甚至可以省略参数和返回值的类型。这样返回箭头->和返回类型都可以省略。在传递闭包给函数时，总是可以推断出参数类型和返回值，所以，我们很少需要明确写出内联闭包的完整格式。</li>
+<li>方法4：如果闭包体只有一行代码，则可以省略retrun关键字，让闭包隐式返回单一表达式的值。</li>
+<li>方法5：速记(Shorthand)参数名：swift为内联闭包提供了速记参数名，可以通过$0, $1, $2等参数名来索引闭包的参数。如果使用这种参数名，则可以直接省略参数列表，而参数的个数和类型可以自动推断出来。in关键字也可以省略</li>
+<li>方法6：更极端的情况是，swift的字符串类型定义了>操作符，该操作符可以看作是带有两个参数的函数，并返回一个Bool值。而这正好符合sort函数的需求，我们可以只是简单的传入一个>，swift可以自动推断出我们想使用的实现。</li>
+</ol>
+
+
+<h2>尾随闭包(Trailing Closures)</h2>
+
+<p>如果将闭包作为函数的最后一个参数，且闭包的实现体很长，则调用函数时可以使用尾随闭包。尾随闭包位于参数列表括号的后面。其格式如下：</p>
+
+<pre><code>someFunctionThatTakesAClosure() {
+    // 尾随闭包实现    
+}
+</code></pre>
+
+<p>因此sort函数同样可以如下实现</p>
+
+<h6>代码清单2: 使用尾随闭包实现sort函数</h6>
+
+<pre><code>// 方法7：尾随闭包
+reversed = sort(names) { $0 &gt; $1 }
+</code></pre>
+
+<p>另外，如果函数只有一个闭包参数，同时将闭包参数实现为尾随闭包，则在调用函数时可以省略参数列表的()，如代码清单3所示：</p>
+
+<h6>代码清单3：函数只有一个闭包参数，同时将闭包参数实现为尾随闭包</h6>
+
+<pre><code>let strings = numbers.map {
+    (var name) -&gt; String in
+    var output = ""
+    while number &gt; 0 {
+        output = digitNames[number % 10]! + output
+        number /= 10
+    }
+
+    return number
+}
+</code></pre>
+
+<h2>获取上下文的值</h2>
+
+<p>和Objective-C的block一样，闭包可以获取定义它的上下文中常量或变量的值，同时可以在闭包体内引用和修改这些常量或变量的值，即使定义这些常量或变量的域已经销毁。</p>
+
+<p>由于内嵌函数也是闭包，因此我们以内嵌函数为例，看看闭包如何获取上下文的常量和变量</p>
+
+<h6>代码清单4：获取上下文值</h6>
+
+<pre><code>func makeIncrementor(amount:Int) -&gt; () -&gt; Int {
+    var runningTotal = 0
+    func incrementor() -&gt; Int {
+        runningTotal += amount
+        return runningTotal
+    }
+
+    return incrementor
+}
+</code></pre>
+
+<p>在代码清单4中，内嵌函数incriminator从上下文获取了两个值runningTotal和amount，其中amount是函数makeIncrementor的参数，runningTotal是函数内部定义的变量。由于incrementor没有修改amount，所以它实际上存储了amount的一份拷贝。而runningTotal在incremetor中被修改了，因此increminator存储了runningTotal的引用，这样确保runningTotal一直有效。</p>
+
+<p>swift决定捕获的值哪些需要拷贝值，而哪些只拷贝引用。在runningTotal不再使用时，swift负责释放其内存。</p>
+
+<h6>代码清单5：makeIncrementor使用</h6>
+
+<pre><code>let incrementByTen = makeIncrementor(amount:10)
+
+incrementByTen()    // returns a value of 10
+incrementByTen()    // returns a value of 20
+incrementByTen()    // returns a value of 30
+
+// 定义另一个incrementor，则它有自己独立的runningTotal
+let incrementBySeven = makeIncrementor(amount:7)
+
+incrementBySeven()  // returns a value of 7
+incrementBySeven()  // returns a value of 14
+incrementBySeven()  // returns a value of 21
+</code></pre>
+
+<h2>引用类型</h2>
+
+<p>在代码清单5中，虽然incrementByTen和incrementBySeven定义为常量，但是闭包仍然可以增加runningTotal的值。这是因为函数和闭包都是引用类型。</p>
+
+<p>当定义一个函数(闭包)常量或变量时，实际上定义的是一个指向函数(闭包)的引用。这意味着如果指定一个闭包给两个不同的常量或变量，则这两个常量和变量将引用同一个函数(闭包)</p>
+
+<h6>代码清单6：引用函数(闭包)</h6>
+
+<pre><code>let incrementByTen = makeIncrementor(amount:10)
+incrementByTen()    // returns a value of 10
+incrementByTen()    // returns a value of 20
+incrementByTen()    // returns a value of 30
+
+let alsoIncrementByTen = incrementByTen
+alsoIncrementByTen()  // returns a value of 40
+</code></pre>
+
+<p>这样，就引出另一个问题：循环引用。我们将会在<a href="http://southpeak.github.io/blog/2014/06/27/ios-swift-closures-2/">下一篇文章</a>中介绍这个问题。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/13">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/11">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (58)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

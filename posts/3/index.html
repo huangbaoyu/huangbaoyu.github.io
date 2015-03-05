@@ -1,0 +1,1488 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/3">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/">Quartz 2D编程指南之十一：位图与图像遮罩</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-05T23:10:23+08:00" pubdate data-updated="true">Jan 5<sup>th</sup>, 2015</time>
+        
+        
+           | <a href="/blog/2015/01/05/quartz-2dbian-cheng-zhi-nan-zhi-shi-%5B%3F%5D-:wei-tu-yu-tu-xiang-zhe-zhao/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>位图与图像遮罩和Quartz中的其它绘制元素一样。这两者在Quartz中都是用CGImageRef数据类型来表示。正如在本章后面看到的一样，我们有一系列的方法来创建一个图像。其中一些需要数据提供者或图像源来提供位图数据。另外一些函数则通过拷贝图像或在图像上应用操作来从已存在的图像中创建图像。不管我们是以何种方式来创建图像，我们都可以将图像绘制到任何类型的图形上下文。记住，位图是在指定分辨率下的一个字节数组。如果我们将位图绘制到一个依赖于分辨率的图形上下文中(如PDF图形上下文)，则位图受限于创建它的图形上下文的分辨率。</p>
+
+<p>我们可以通过调用CGImageMaskCreate函数来创建一个Quartz图像遮罩。我们将在“创建图像遮罩”一节中看到如何创建遮罩。使用图像遮罩不是绘制遮罩的唯一方法，具体的我们都会在下面看到。</p>
+
+<h2>位图和图像遮罩</h2>
+
+<p>一个位图是一个像素数组。每一个像素表示图像中的一个点。JPEG, TIFF和PNG图像文件都是位图。应用程序的icon也是位图。位图被限定在一个矩形内。但是通过使用alpha分量，它们可以呈现不同的形式，也可以旋转或被裁剪，如图11-1所示：</p>
+
+<p>Figure 11-1  Bitmap images</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/images.gif" alt="image" /></p>
+
+<p>位图中的每一个采样包含特定颜色空间下的一个或更多颜色分量，以及一个额外的用于指定alpha值以表示透明度的分量。每一个分量可以是从1-32位。在Mac OS X中，Quartz支持浮点值分量。在Mac OS X和iOS中支持的格式将会在下文中介绍。ColorSync提供了位图支持的颜色空间。</p>
+
+<p>Quartz同样支持图像遮罩(image masks)。一个图像遮罩也是一个位图，它指定了一个绘制区域，而不是颜色。从效果上来说，一个图像遮罩更像一个模块，它指定在page中绘制颜色的位置。Quartz使用当前的填充颜色来绘制一个图像遮罩。一个颜色遮罩可以有1-8位的深度。</p>
+
+<h2>位图信息</h2>
+
+<p>Quartz提供了很多图像格式并内建了多种常用的格式。在iOS中，这些格式包括JPEG, GIF, PNG, TIF, ICO, GMP, XBM, 和CUR。其它的位图格式或专有格式需要我们指定图像格式的详细信息，以便Quartz能正确地解析图像。我们提供给CGImageCreate函数的图像数据必须是以像素为单位的，而不是基于扫描线的。Quartz不支持平面数据。</p>
+
+<p>这一节描述了与位图相关的信息。当我们创建并使用Quartz图像时(使用CGImageRef数据类型)，我们将看到一些Quartz图像创建函数需要我们指定所有的信息，而其它函数只需要部分信息。我们所需要提供的信息依赖于位图数据的编码，以及位图是表示一个图像还是图像遮罩。</p>
+
+<pre><code>注意：当使用原始图像数据时，为了获得更好的性能，我们可以使用vImage框架。我们可以使用vImageBuffer_InitWithCGImage函数从一个CGImageRef引用导入图像数据到vImage中。
+</code></pre>
+
+<p>创建一个位图(CGImageRef)时，Quartz使用以下信息：</p>
+
+<ol>
+<li>位图数据源：可以是一个Quartz数据提供者或者是一个Quartz图像源。</li>
+<li>可选的解码数组。(Decode Array)</li>
+<li>插值设置：这是一个布尔值，指定Quartz在重置图像大小时是否使用插值算法。</li>
+<li>渲染意图：指定如何映射位于图形上下文中的目标颜色空间中的颜色。该值在图像遮罩中不需要。</li>
+<li>图像尺寸</li>
+<li>像素格式，包括每个分量中的位数，每个像素的位数和每行中的字节数。</li>
+<li>对于图像来说，颜色空间和位图布局信息描述了alpha的位置和位置是否使用浮点值。图像遮罩不需要这个信息。</li>
+</ol>
+
+
+<h3>解码数组</h3>
+
+<p>一个解码数组将图像颜色值映射到其它颜色值，这对于诸如对一个图像做去饱和或者反转颜色值非常有用。数组包含每个颜色分量的一个数值对。当Quartz渲染图像时，它利用一个线性转换将原始分量值映射到一个目标颜色空间中的指定范围内一个相关值。例如，在RGB颜色空间中的一个图像的解码数组包含6个输入，分别用于红、绿、蓝颜色分量。</p>
+
+<h3>像素格式</h3>
+
+<p>像素格式包含以下信息：</p>
+
+<ol>
+<li>每个分量的位数，即在一个像素中每个独立颜色分量的位数。对于一个图像遮罩，这个值是源像素中遮罩bit的数目。例如，如果源图片是8-bit的遮罩，则指定每个分量是8位。</li>
+<li>每个像素的位数，即一个源像素所占的总的位数。这个值必须至少是每个分量的位数乘以每个像素中分量的数目。</li>
+<li>每行的字节数，即图像中水平行的字节数。</li>
+</ol>
+
+
+<h3>颜色空间和位图布局</h3>
+
+<p>为了确保Quartz能正确的解析每个像素的位，我们必须指定：</p>
+
+<ol>
+<li>一个位图是否包含alpha通道。Quartz包含RGB,CMYK和灰度颜色空间。它也支持alpha，或者透明度，虽然并不是所有位图图像格式都支持alpha通道。当它可用时，alpha分量可以位于像素最显著的位置，也可以是最不显著的位置。</li>
+<li>对于有alpha分量的位图，指定颜色分量是否已经乘以了alpha值。预乘alpha(Premultiplied alpha)表示一个已将颜色分量乘以了alpha值的源颜色。这种预处理通过消除每个颜色分量的额外的乘法运算来加速图片的渲染。</li>
+<li>采样的数据格式&mdash;是整型还是浮点型。</li>
+</ol>
+
+
+<p>当我们使用CGImageCreate函数来创建一个图像时，我们提供一个类型为CGImageBitmapInfo的bitmapInfo参数，来指定位置布局信息。以下的常量指定了alpha分量的位置及颜色分量是否做预处理：</p>
+
+<ol>
+<li>kCGImageAlphaLast：alpha分量存储在每个像素中最不显著的位置，如RGBA。</li>
+<li>kCGImageAlphaFirst：alpha分量存储在每个像素中最显著的位置，如ARGB。</li>
+<li>kCGImageAlphaPremultipliedLast：alpha分量存储在每个像素中最不显著的位置，但颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaPremultipliedFirst：alpha分量存储在每个像素中最显著的位置，同时颜色分量已经乘以了alpha值。</li>
+<li>kCGImageAlphaNoneSkipLast：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最不显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNoneSkipFirst：没有alpha分量。如果像素的总大小大于颜色空间中颜色分量数目所需要的空间，则最显著位置的位将被忽略。</li>
+<li>kCGImageAlphaNone：等于kCGImageAlphaNoneSkipLast。</li>
+</ol>
+
+
+<p>我们使用常量kCGBitmapFloatComponents来标识一个位图格式使用浮点值。对于浮点格式，我们将这个常量与上而描述的合适的常量进行逻辑OR操作。例如，对于每个像素有128位的使用预处理的浮点格式，同时alpha值位于像素中最不显示位置，我们将以下信息提供给Quartz：</p>
+
+<pre><code>kCGImageAlphaPremultipliedLast | kCGBitmapFloatComponents
+</code></pre>
+
+<p>图11-2演示了一个像素在使用16-或32-bit整型像素格式的CMYK和RGB颜色空间中如何表示。32-bit整型像素格式中，每个分量占8位。16-bit整型像素格式中每个分量占5位。Quartz同样支持128-bit浮点像素格式，每个分量占32位。128-bit格式没有显示在下图中。</p>
+
+<p>Figure 11-2  32-bit and 16-bit pixel formats for CMYK and RGB color spaces in Quartz 2D</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/colorformatrgba32.gif" alt="image" /></p>
+
+<h2>创建图像</h2>
+
+<p>表11-1罗列了Quartz提供的用于创建CGImageRef对象的函数。函数的选择依赖于图像的数据源。最常用的函数是CGImageCreate。它可以从任何类型的位图数据来创建一个图像。然而，它是最复杂的函数，因为需要提供所有的位图信息。为了使用这个函数，我们需要熟悉上面讨论的位图图像信息的内容。</p>
+
+<p>如果我们想从一个标准的图像格式，如PNG或JPEG，来创建一个CGImage对象，则最简单的方法是调用函数CGImageSourceCreateWithURL来创建一个图像源，然后调用CGImageSourceCreateImageAtIndex以使用从图像源中索引index指定的图像数据来创建一个图像。如果源图像文件只包含一个图像，则索引为0。如果图像文件格式支持包含多个图像的文件，则需要提供所需要图像的索引值，记住起始值是0。</p>
+
+<p>如果我们已经将内容渲染到一个位图图形上下文，并想要从中获取到CGImage对象，则调用CGBitmapContextCreateImage函数。</p>
+
+<p>有几个函数可以操作已有的图像，如拷贝、创建一个缩略图，或从一个大图像中创建一个图像。不管如何创建一个图像对象，我们都使用函数CGContextDrawImage将图像绘制到一个图形上下文中。记住CGImage是不可变的。当不再需要一个CGImage对象时，调用CGImageRelease函数来释放它。</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/W9ZJHCPpoB6QElZy*ePoumPixMBNcMaHrVryzqP12b0!/b/dBmKcHUpFAAA&amp;bo=pAaAAgAAAAADBwI!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>接下来将讨论如何创建：</p>
+
+<ol>
+<li>从一个已存在图像中创建一个子图像</li>
+<li>从一个图像图形上下文中创建一个图像</li>
+</ol>
+
+
+<h3>从一个大图片中创建一个图像</h3>
+
+<p>我们可以使用CGImageCreateWithImageInRect函数从一个大图像中创建一个图像。图11-3演示了这一情形。</p>
+
+<p>Figure 11-3  A subimage created from a larger image</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subimage.gif" alt="image" /></p>
+
+<p>函数CGImageCreateWithImageInRect返回的图像保留了源图像的一个引用，这意味着我们在调用完这个函数后可以释放源图像。</p>
+
+<p>图11-4是另外一个例子。在这种情况下，公鸡的头部被从大图中提取出来，然后绘制到一个大于子图像的矩形中。</p>
+
+<p>代码清单11-1显示了创建并绘制子图像的过程。CGContextDrawImage函数绘制公鸡头部的矩形区域是所提取的子图像的四倍大小。清单中的只是一个代码片断。我们需要声明合适的变量，创建公鸡头像，并部署公鸡图像及公鸡头部子图像。因为只是代码片断，所以没有演示如何创建一个图形上下文。我们可以使用任何我们所喜欢的图形上下文。创建图形上下文的例子可以查看“图形上下文”一章。</p>
+
+<p>Figure 11-4  An image, a subimage taken from it and drawn so it’s enlarged</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rooster_image_zoom.gif" alt="image" /></p>
+
+<p>Listing 11-1  Code that creates a subimage and draws it enlarged</p>
+
+<pre><code>myImageArea = CGRectMake (rooster_head_x_origin, rooster_head_y_origin,
+                            myWidth, myHeight);
+mySubimage = CGImageCreateWithImageInRect (myRoosterImage, myImageArea);
+myRect = CGRectMake(0, 0, myWidth*2, myHeight*2);
+CGContextDrawImage(context, myRect, mySubimage);
+</code></pre>
+
+<h3>从一个位图图形上下文创建一个图像</h3>
+
+<p>为了从一个已存在的位图图形上下文创建一个图像，我们可以调用函数CGBitmapContextCreateImage，如以下：</p>
+
+<pre><code>CGImageRef myImage;
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+</code></pre>
+
+<p>这个函数返回的CGImage对象是通过一个拷贝操作创建的。因此我们对位图图形上下文所做的修改都不会影响到已返回的CGImage对象。在一些情况下，这个拷贝操作实际上沿用了copy-on-write语义，即只有当位图图形上下文中的数据被修改时才会去实际拷贝这些数据。我们可能需要在绘制额外数据到位图图形上下文之前使用结果数据或者释放它们，以便我们可以避免实际去拷贝这些数据。</p>
+
+<p>如何创建一个位图图形上下文，可以参考&#8221;创建图形上下文&#8221;相关的内容。</p>
+
+<h2>创建一个图像遮罩</h2>
+
+<p>一个Quartz位图图像遮罩如同艺术家使用丝网印刷品(silkscreen)一样。一个位图图像遮罩定义了如何转换颜色，而不是使用哪些颜色。图像遮罩中的每个采样值指定了在特定位置中，当前填充颜色值被遮罩的数量。采样值指定了遮罩的不透明度。值越大，表示越不透明，Quartz在指定位置绘制的颜色越少。我们可以将采样值当成alpha值的反转。1表示透明的，而0表示不透明。</p>
+
+<p>图像遮罩的每个分量可能是1，2，4或者8位。对于1-bit的遮罩，采样值1指定遮罩的区域掩盖了当前的填充颜色。值为0表示当绘制遮罩时，显示当前的填充颜色。我们可以将1-bit遮罩当成黑色和白色；要么完全遮挡，要么完全显示。</p>
+
+<p>每个分量中有2，4，8位的图像遮罩代表灰度值。每个分量使用以下的公式将值映射到[0, 1]之间的值：</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inline_equations.jpg" alt="image" /></p>
+
+<p>例如，一个4-bit的遮罩其值位于[0, 1]之间，且增长的步长为1/15。0和1这两个值分别是最小和最大值&mdash;分别表示完全遮盖或完全透明。0和1之间的值使用(1-MaskSampleValue)这个公式来处理局部绘制。例如，如果一个8-bit遮罩的采样值设置为0.7，则那些alpha值为(1-0.7)，即0.3的颜色将会被绘制。</p>
+
+<p>函数CGImageMaskCreate从我们提供的位图图像信息中创建一个Quartz图像遮罩。我们提供的信息与创建图像所提供的信息是一样的，只是不需要提供颜色空间信息，位图信息常量或渲染意图，我们可以从代码清单11-2中看到这个函数原型：</p>
+
+<p>Listing 11-2  The prototype for the function CGImageMaskCreate</p>
+
+<pre><code>CGImageRef CGImageMaskCreate (
+        size_t width,
+        size_t height,
+        size_t bitsPerComponent,
+        size_t bitsPerPixel,
+        size_t bytesPerRow,
+        CGDataProviderRef provider,
+        const CGFloat decode[],
+        bool shouldInterpolate
+);
+</code></pre>
+
+<h2>遮罩图像</h2>
+
+<p>遮罩技术可以让我们通过控制图片的哪一部分被绘制，以生成很多有趣的效果，我们可以：</p>
+
+<ol>
+<li>在一个图像上使用图像遮罩。我们也可以把一个图像作为遮罩图，以获取同使用图像遮罩相反的效果。</li>
+<li>使用颜色来遮罩图像的一部分，其中包含被称为颜色遮罩的技术</li>
+<li>将图形上下文剪切到一个图像或图像遮罩，当Quartz绘制内容到剪切的图形上下文时来遮罩一个图像。</li>
+</ol>
+
+
+<h3>使用一个图像遮罩来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMask通过将图像遮罩使用到一个图像上的方式来创建一个图像。这个函数带有两个参数：</p>
+
+<ol>
+<li>原始图像，遮罩将用于其上。这个图像不能是图像遮罩，也不能有与之相关的遮罩颜色。</li>
+<li>一个图像遮罩，通过调用CGImageMaskCreate函数创建的。也可以提供一个图像来替代图像遮罩，但这将给出非常不同的结果。这将在下面描述。</li>
+</ol>
+
+
+<p>一个图像遮罩的采样如同一个反转的alpha值。一个图像遮罩采样值(S)：</p>
+
+<ol>
+<li>为1时，则不会绘制对应的图像样本。</li>
+<li>为0时，则允许完全绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为(1-S)。</li>
+</ol>
+
+
+<p>图11-5显示了一个由Quartz图像创建函数创建的图像，而图11-6显示了一个使用CGImageMaskCreate函数创建的图像遮罩。图11-7则显示了一个使用CGImageCreateWithMask函数将图像遮罩应用于一个图像的效果。</p>
+
+<p>Figure 11-5  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers.gif" alt="image" /></p>
+
+<p>Figure 11-6  An image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tiger_mask.gif" alt="image" /></p>
+
+<p>注意，源图像中与遮罩黑色区域对应的区域绘制出来，而与白色区域对应的部分则没有绘制出来。而与遮罩灰色区域对应的区域则使用一个与(1-图像遮罩采样值)相同的alpha值来绘制。</p>
+
+<p>Figure 11-7  The image that results from applying the image mask to the original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_create_w_mask.gif" alt="image" /></p>
+
+<h3>使用一个图像来遮罩一个图像</h3>
+
+<p>我们可以使用函数CGImageCreateWithMask来用一个图像遮罩另一个图像，而不是使用一个图像遮罩。我们可以使用这种方式来达到与使用图像遮罩相反的效果。那此时我们传递给CGImageCreateWithMask函数的就不是一个图像遮罩了，而是传递一个通过Quartz图像创建函数创建的图像。</p>
+
+<p>用于遮罩的图像的采样也是操作alpha值。一个图像采样值(S)：</p>
+
+<ol>
+<li>为1时，则允许完全绘制对应的图像样本。</li>
+<li>为0时，则不会绘制对应的图像样本。</li>
+<li>0和1之间的值，则让对应的图像样本的alpha的值为S。</li>
+</ol>
+
+
+<p>图11-8显示了调用CGImageCreateWithMask函数将图11-6中的图像作为遮罩应用于图11-5中的图像上的效果。在这个例子中，我们假定图11-6中的图像是使用Quartz图像创建函数(如CGImageCreate)创建的。比较图11-8与图11-7，可以看出使用图像采样时，可以获取与使用图像遮罩采样相反的效果。</p>
+
+<p>在图11-8的结果图像中，源图像中与图像的黑色区域对应的区域没有绘制出来。与白色区域对应的区域则绘制出来了。在遮罩中与灰色区域对应的区域则使用与遮罩图像采样值相同的alpha值来绘制。</p>
+
+<p>Figure 11-8  The image that results from masking the original image with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/image_mask_image.gif" alt="image" /></p>
+
+<h3>使用颜色来遮罩图像</h3>
+
+<p>函数CGImageCreateWithMaskingColors通过遮罩一种颜色或一个颜色范围内的颜色来创建一个图像。使用这个函数，我们可以执行如图11-9所示的颜色遮罩，当然也可以遮罩一个范围内的颜色，如图11-11、11-12和11-13所示的效果。</p>
+
+<p>函数CGImageCreateWithMaskingColors有两个参数：</p>
+
+<ol>
+<li>一个图像，它不能是遮罩图像，也不能是使用过图像遮罩或颜色遮罩的图像。</li>
+<li>一个颜色分量数组，指定了一个颜色或一组颜色值，以用于遮罩图像。</li>
+</ol>
+
+
+<p>Figure 11-9  Chroma key masking</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/chroma_key.gif" alt="image" /></p>
+
+<p>颜色分量数组中元素的个数必须等于图像所在颜色空间的颜色分量数目的两倍。对于颜色空间中的每一个颜色分量，提供一个最小值和一个最大值来限定遮罩颜色的范围。如果只使用一个颜色，则设置最大值等于最小值即可。颜色分量数组中的值按以下顺序来提供：</p>
+
+<pre><code>{min[1], max[1], ... min[N], max[N]}，其中N是分量的数目
+</code></pre>
+
+<p>如果图像使用整型像素分量，则颜色分量数组中的每个值必须在[0 .. 2<sup>bitsPerComponent</sup> &ndash; 1]范围之内。如果图像使用浮点像素分量，则值可以是表示任何有效的颜色分量值的浮点数。</p>
+
+<p>一个图像采样如果其颜色值在以下范围内，则不会被绘制：</p>
+
+<pre><code>{c[1], ... c[N]}，其中min[i] &lt;= c[i] &lt;= max[i] for 1 &lt;= i &lt;= N
+</code></pre>
+
+<p>图11-10中两只老虎的图像使用了每个分量有8位的RGB颜色空间。为了在这个图像上屏蔽一组颜色，我们提供一组在[0, 255]区间内的最小和最大颜色分量值。</p>
+
+<p>Figure 11-10  The original image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_tigers1.gif" alt="image" /></p>
+
+<p>代码清单11-3演示了如何设置颜色分量数组，并将其提供给CGImageCreateWithMaskingColors函数以达到图11-11的效果。</p>
+
+<p>Listing 11-3  Masking light to mid-range brown colors in an image</p>
+
+<pre><code>CGImageRef myColorMaskedImage;
+const CGFloat myMaskingColors[6] = {124, 255,  68, 222, 0, 165};
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-11  An image with light to midrange brown colors masked out</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/beige_brown_masking.gif" alt="image" /></p>
+
+<p>代码清单11-14同样操作图11-10并得到图11-12的效果。这个例子遮罩了一组暗色。</p>
+
+<p>Listing 11-4  Masking shades of brown to black</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextDrawImage (context, myContextRect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-12  A image after masking colors from dark brown to black</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/brown_black_masking_colors.gif" alt="image" /></p>
+
+<p>我们同样可以设置一个填充颜色来作为图像的遮罩颜色，以达到图11-13的效果，其中被遮罩区域使用了填充颜色。代码清单11-15演示了这一过程</p>
+
+<p>Listing 11-5  Masking a range of colors and setting a fill color and</p>
+
+<pre><code>CGImageRef myMaskedImage;
+const CGFloat myMaskingColors[6] = { 0, 124, 0, 68, 0, 0 };
+myColorMaskedImage = CGImageCreateWithMaskingColors (image,
+                                        myMaskingColors);
+CGContextSetRGBFillColor (myContext, 0.6373,0.6373, 0, 1);
+CGContextFillRect(context, rect);
+CGContextDrawImage(context, rect, myColorMaskedImage);
+</code></pre>
+
+<p>Figure 11-13  An image drawn after masking a range of colors and setting a fill color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/fill_color_with_mask.gif" alt="image" /></p>
+
+<h3>通过裁减上下文来遮罩一个图片</h3>
+
+<p>函数CGContextClipToMask将遮罩映射为一个矩形并将其与图形上下文的当前裁减区域求个交集。我们提供以下参数：</p>
+
+<ol>
+<li>需要裁减的图形上下文</li>
+<li>要使用遮罩的矩形区域</li>
+<li>一个图像遮罩，其通过CGImageMaskCreate函数创建。我们可以使用图像来替代图像遮罩以达到相反的效果。但图像必须使用Quartz图像创建函数来创建，但不能是使用过图像遮罩或颜色遮罩的图像。</li>
+</ol>
+
+
+<p>裁减区域的结果依赖于是否提供了一个图像遮罩或图像给CGContextClipToMask函数。</p>
+
+<p>我们看看图11-14.假设它是通过调用CGImageMaskCreate函数创建的一个图像遮罩，然后将其作为CGContextClipToMask函数的参数。结果上下文允许绘制黑色区域，而不绘制白色区域，并使用(1-S)的alpha值来绘制灰色区域，其中S是图像遮罩的采样值。如果使用CGContextDrawImage函数来将一个图像绘制到裁减上下文，则可以获得图11-15所示的结果。</p>
+
+<p>Figure 11-14  A masking image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/the_mask.gif" alt="image" /></p>
+
+<p>Figure 11-15  An image drawn to a context after clipping the content with an image mask</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/mask_as_mask.gif" alt="image" /></p>
+
+<p>当遮罩图像被当成一个图像时，可以获得相反的结果，如图11-16所示：</p>
+
+<p>Figure 11-16  An image drawn to a context after clipping the content with an image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/inverse_mask_clip.gif" alt="image" /></p>
+
+<h2>在图像中使用混合模式</h2>
+
+<p>此处略，类似于在颜色中使用混合模式。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/">Quartz 2D编程指南之十：Quartz 2D中的数据管理</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-11T09:19:08+08:00" pubdate data-updated="true">Dec 11<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/11/quartz-2dbian-cheng-zhi-nan-zhi-shi-:quartz-2dzhong-de-shu-ju-guan-li/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>管理数据是每一个图形应用程序所需要处理的工作。对于Quartz来说，数据管理涉及为Quartz 2D程序提供数据，及从中获取数据。一些Quartz 2D程序将数据传输到Quartz中，如从文件或程序其它部分获取图片或PDF数据。另一些程序则获取Quartz数据，如将图像或PDF数据写入到文件，或提供给程序其它部分这些数据。</p>
+
+<p>Quartz提供了一系列的函数来管理数据。通过学习本章，我们可以了解到哪些函数是最适合我们的程序的。</p>
+
+<pre><code>注：我们推荐使用图像I/O框架来读取和写入数据，该框架在iOS 4、Mac OS X 10.4或者更高版本中可用。查看《Image I/OProgramming Guide 》可以获取更多关于CGImageSourceRef和CGImageDestinationRef的信息。图像源和目标不仅提供了访问图像数据的方法，不提供了更多访问图像原数据的方法。
+</code></pre>
+
+<p>Quartz可识别三种类型的数据源和目标：</p>
+
+<ol>
+<li>URL：通过URL指定的数据可以作为数据的提供者和接收者。我们使用Core Foundation数据类型CFURLRef作为参数传递给Quartz函数。</li>
+<li>CFData：Core Foundation数据类型CFDataRef和CFMutableDataRef可简化Core Foundation对象的内存分配行为。CFData是一个”toll-freebridged”类，CocoaFoundation中对应的类是NSData；如果在Quartz 2D中使用Cocoa框架，你可以传递一个NSData对象给Quartz方法，以取代CFData对象。</li>
+<li>原始数据：我们可以提供一个指向任何类型数据的指针，连同处理这些数据基本内存管理的回调函数集合。</li>
+</ol>
+
+
+<p>这些数据，无论是URL、CFData对象，还是数据缓存，都可以是图像数据或PDF数据。图像数据可以是任何格式的数据。Quartz能够解析大部分常用的图像文件格式。一些Quartz数据管理函数专门用于处理图像数据，一些只处理PDF数据，还有一些可同时处理PDF和图像数据。</p>
+
+<p>URL，CFData和原始数据源和目标中的数据都是在Mac OS X 或者iOS图像领域范围之外的，如图10-1所示。Mac OS X或iOS的其它图像技术通常会提供它们自己的方式来和Quartz通信。例如，一个Mac OS X 应用程序可以传输一个Quartz图像给Core Image，并使用Core Image来实现更复杂的效果。</p>
+
+<p>Figure 10-1  Moving data to and from Quartz 2D in Mac OS X</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/movingdata.gif" alt="image" /></p>
+
+<h2>传输数据给Quartz 2D</h2>
+
+<p>表10-1列出了从数据源获取数据的方法。所有的这些函数，除了CGPDFDocumentCreateWithURL，都返回一个图像源(CGImageSourceRef)或者数据提供者(CGDataProviderRef)。图像源和数据提供者抽象了数据访问工作，并避免了程序去管理原始内存缓存。</p>
+
+<p>图像源是将图像数据传输给Quartz的首先方式。图像源可表示很多种图像数据。一个图像源可表示多于一个图像，也可表示缩略图、图像的属性和图像文件。当我们拥有CGImageSourceRef对象后，我们可以完成如下工作：</p>
+
+<ol>
+<li>使用函数CGImageSourceCreateImageAtIndex,CGImageSourceCreateThumbnailAtIndex, CGImageSourceCreateIncremental创建图像(CGImageRef). 一个CGImageRef数据类型表示一个单独的Quartz图像。</li>
+<li>通过函数CGImageSourceUpdateData或CGImageSourceUpdateDataProvider来添加内容到图像源中。</li>
+<li>使用函数CGImageSourceGetCount, CGImageSourceCopyProperties和CGImageSourceCopyTypeIdentifiers获取图像源的信息。</li>
+</ol>
+
+
+<p>CFPDFDocumentCreateWithURL函数可以方便地从URL指定的文件创建PDF文档。</p>
+
+<p>数据提供者是比较老的机制，它有很多限制。它们可用于获取图像或PDF数据。</p>
+
+<p>我们可以将数据提供者用于：</p>
+
+<ol>
+<li>一个图像创建函数，如CGImageCreate,CGImageCreateWithPNGDataProvider或者CGImageCreateWithJPEGDataProvider。</li>
+<li>PDF文档的创建函数CGPDFDocumentCreateWithProvider.</li>
+<li>函数CGImageSourceUpdateDataProvider用于更新已存在的图像源。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_23d72ec7c568bf5.png" alt="image" /></p>
+
+<h2>获取Quartz 2D的数据</h2>
+
+<p>表10-2列出地从Quartz 2D中获取数据的方法。所有这些方法，除了CGPDFContextCreateWithURL，都返回一个图像目标(CGImageDestinationRef)或者是数据消费者(CGDataComsumerRef)。图像目标和数据消费者抽象的数据写入工作，让Quartz来处理细节。</p>
+
+<p>一个图像目标是获取Quartz数据的首先方法。与图像源一样，图像目标也可以表示很多图像数据，如一个单独图片、多个图片、缩略图、图像属性或者图片文件。在获取到CGImageDestinationRef后，我们可以完成以下工作：</p>
+
+<ol>
+<li>使用函数CGImageDestinationAddImage或者CGImageDestinationAddImageFromSource添加一个图像(CGImageRef)到目标中。一个CGImageRef表示一个图片。</li>
+<li>使用函数CGImageDestinationSetProperties设置属性</li>
+<li>使用函数CGImageDestinationCopyTypeIdentifiers和CGImageDestinationGetTypeID从图像目标中获取信息。</li>
+</ol>
+
+
+<p>函数CGPDFContextCreateWithURL可以方便地将PDF数据写入URL指定的位置。</p>
+
+<p>数据消费者是一种老的机制，有很多限制。它们用于写图像或PDF数据。我们可以将数据消费者用于：</p>
+
+<ol>
+<li>PDF上下文创建函数CGPDFContextCreate。该函数返回一个图形上下文，用于记录一系列的PDF绘制命令。</li>
+<li>函数CGImageDestinationCreateWithDataConsumer，用于从数据消费者中创建图像目标。</li>
+</ol>
+
+
+<p>关于图像的更多信息，可查看“Bitmap Images andImage Masks”。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_ad38140dfa05446.png" alt="image" /></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/">Quartz 2D编程指南之九：透明层</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-10T09:13:04+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-jiu-:tou-ming-ceng/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>透明层(TransparencyLayers)通过组合两个或多个对象来生成一个组合图形。组合图形被看成是单一对象。当需要在一组对象上使用特效时，透明层非常有用，如图9-1所示的给三个圆使用阴影的效果。</p>
+
+<p>Figure 9-1  Three circles as a composite in a transparency layer</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer1.gif" alt="image" /></p>
+
+<p>如果没有使用透明层来渲染图9-1中的三个圆，对它们使用阴影的效果将是如图9-2所示：</p>
+
+<p>Figure 9-2  Three circles painted as separate entities</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_layer2.gif" alt="image" /></p>
+
+<h2>透明层的工作方式</h2>
+
+<p>Quartz的透明层类似于许多流行的图形应用中的层。层是独立的实体。Quartz维护为每个上下文维护一个透明层栈，并且透明层是可以嵌套的。但由于层通常是栈的一部分，所以我们不能单独操作它们。</p>
+
+<p>我们通过调用函数CGContextBeginTransparencyLayer来开始一个透明层，该函数需要两个参数：图形上下文与CFDictionary对象。字典中包含我们所提供的指定层额外信息的选项，但由于Quartz 2D API中没有使用字典，所以我们传递一个NULL。在调用这个函数后，图形状态参数保持不变，除了alpha值[默认设置为1]、阴影[默认关闭]、混合模式[默认设置为normal]、及其它影响最终组合的参数。</p>
+
+<p>在开始透明层操作后，我们可以绘制任何想显示在层上的对象。指定上下文中的绘制操作将被当成一个组合对象绘制到一个透明背景上。这个背景被当作一个独立于图形上下文的目标缓存。</p>
+
+<p>当绘制完成后，我们调用函数CGContextEndTransparencyLayer。Quartz将结合对象放入上下文，并使用上下文的全局alpha值、阴影状态及裁减区域作用于组合对象。</p>
+
+<h2>在透明层中进行绘制</h2>
+
+<p>在透明层中绘制需要三步：</p>
+
+<ol>
+<li>调用函数CGContextBeginTransparencyLayer</li>
+<li>在透明层中绘制需要组合的对象</li>
+<li>调用函数CGContextEndTransparencyLayer</li>
+</ol>
+
+
+<p>图9-3显示了在透明层中绘制三个矩形，其中将这三个矩形当成一个整体来渲染阴影。</p>
+
+<p>Figure 9-3  Three rectangles painted to a transparency layer</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/trans_code.gif" alt="image" /></p>
+
+<p>代码清单9-1显示了如何利用透明层生成图9-3所示的矩形。</p>
+
+<p>Listing 9-1  Painting to a transparency layer</p>
+
+<pre><code>void MyDrawTransparencyLayer (CGContext myContext, float wd,float ht)
+{
+    CGSize myShadowOffset = CGSizeMake (10, -20);
+    CGContextSetShadow (myContext, myShadowOffset, 10);   
+    CGContextBeginTransparencyLayer (myContext, NULL);
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3+ 50,ht/2 ,wd/4,ht/4));
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3-50,ht/2-100,wd/4,ht/4));
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3,ht/2-50,wd/4,ht/4));
+    CGContextEndTransparencyLayer (myContext);
+}
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/">Quartz 2D编程指南之八：渐变</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-10T09:00:26+08:00" pubdate data-updated="true">Dec 10<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/10/quartz-2dbian-cheng-zhi-nan-zhi-ba-:jian-bian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Quartz提供了两个不透明数据odgago创建渐变：CGShadingRef和CGGradientRef。我们可以使用任何一个来创建轴向(axial)或径向(radial)渐变。一个渐变是从一个颜色到另外一种颜色的填充。</p>
+
+<p>一个轴向渐变(也称为线性渐变)沿着由两个端点连接的轴线渐变。所有位于垂直于轴线的某条线上的点都具有相同的颜色值。</p>
+
+<p>一个径向渐变也是沿着两个端点连接的轴线渐变，不过路径通常由两个圆来定义。</p>
+
+<p>本章提供了一些我们使用Quartz能够创建的轴向和径向渐变的类型的例子，并比较绘制渐变的两种方法，然后演示了如何使用每种不透明数据类型来创建渐变。</p>
+
+<h2>轴向和径向渐变实例</h2>
+
+<p>Quartz函数提供了一个丰富的功能来创建渐变效果。这一部分显示了一些我们能达到的效果。图8-1中的轴向渐变由橙色向黄色渐变。在这个例子中，渐变轴相对于原点倾斜了45度角。</p>
+
+<p>Figure 8-1  An axial gradient along a 45 degree axis</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/two_color_gradient.jpg" alt="image" /></p>
+
+<p>Quartz也允许我们指定一系列的颜色和位置值，以沿着轴来创建更复杂的轴向渐变，如图8-2所示。起始点的颜色值是红色，结束点的颜色是紫罗兰色。同时，在轴上有五个位置，它们的颜色值分别被设置为橙、黄、绿、蓝和靛蓝。我们可以把它看成沿着同一轴线的六段连续的线性渐变。虽然这里的轴线与图8-1是一样的，但这不是必须的。轴线的角度由我们提供的两个端点定义。</p>
+
+<p>Figure 8-2  An axial gradient created with seven locations and colors</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rainbow_gradient.jpg" alt="image" /></p>
+
+<p>图8-3显示了一个径向渐变，它从一个小的明亮的红色圆渐变到一个大小黑色的圆。</p>
+
+<p>Figure 8-3  A radial gradient that varies between two circles</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cylinder6.gif" alt="image" /></p>
+
+<p>使用Quartz，我们不局限于创建颜色值改变的渐变；我们可以只修改alpha值，或者创建alpha值与其它颜色组件一起改变的渐变。图8-4显示了一个渐变，其红、绿、蓝组件的值是不变的，但alpha值从1.0渐变到0.1。</p>
+
+<p>注意：如果我们使用alpha值来改变一个渐变，则在绘制一个PDF内容时我们不能捕获这个渐变。因此，这样的渐变无法打印。如果需要绘制一个渐变到PDF，则需要让alpha值为1.0。</p>
+
+<p>Figure 8-4  A radial gradient created by varying only the alpha component</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_only.jpg" alt="image" /></p>
+
+<p>我们可以把一个圆放置到一个径向渐变中来创建各种形状。如果一个圆是另一个的一部分或者完全在另一个的外面，则Quartz创建了圆锥和一个圆柱。径向渐变的一个通常用法就是创建一个球体阴影，如图8-5所示。在这种情况下，一个单一的点(半径为0的圆)位于一个大圆以内。</p>
+
+<p>Figure 8-5  A radial gradient that varies between a point and a circle</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/shaded_sphere.gif" alt="image" /></p>
+
+<p>我们可以像图8-6一样通过内嵌几个径向渐变来创建更复杂的效果。它使用同心圆来创建图形中的各环形部分。</p>
+
+<p>Figure 8-6  Nested radial gradients</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/torus.gif" alt="image" /></p>
+
+<h2>CGShading和CGGradient对象的对比</h2>
+
+<p>我们有两个对象类型用于创建渐变，你可能想知道哪一个更好用。本节就来回答这个问题。</p>
+
+<p>CGShadingRef这个不透明数据类型给我们更多的控制权，以确定如何计算每个端点的颜色。在我们创建CGShading对象之前，我们必须创建一个CGFunction对象(CGFunctionRef)，这个对象定义了一个用于计算渐变颜色的函数。写一个自定义的函数让我们能够创建平滑的渐变，如图8-3，8-3和8-5及更多非传统的效果，如图8-12所示。</p>
+
+<p>当创建一个CGShading对象时，我们指定其是轴向还是径向。除了计算函数外，我们还需要提供一个颜色空间、起始点和结束点或者是半径，这取决于是绘制轴向还是径向渐变。在绘制时，我们只是简单地传递CGShading对象及绘制上下文给CGContextDrawShading函数。Quartz为渐变上的每个点调用渐变计算函数。</p>
+
+<p>一个CGGradient对象是CGShading对象的子集，其更易于使用。CGGradientRef不透明类型易于作用，因为Quartz在渐变的每一个顶点上计算颜色值。我们不需要提供一个渐变计算函数。当创建一个渐变对象时，我们提供一个位置和颜色的数组。Quartz使用对应的颜色值来计算每个梯度的渐变，。我们可以使用单一的起始与结束点来设置一个渐变对象，如图8-1所示，或者提供一组端点来创建一个类似于图8-2的的效果。使用CGShading对象可以提供多于两个位置的能力。</p>
+
+<p>当我们创建一个CGGradient对象时，我们需要设置一个颜色空间、位置、和每个位置对应的颜色值。当使用一个渐变对象绘制上下文时，我们指定Quartz是绘制一个轴向还是径向渐变。在绘制时，我们指定开始结束点或半径，这取决于我们是绘制轴向还是径向渐变。而CGShading的几何形状是在创建时定义的，而不是绘制时。</p>
+
+<p>表8-1总结了两种不透明数据类型之间的区别。</p>
+
+<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/AaDaf5N2GhcgG29GukC4bGMrQsPTL35OU4kjfjH2tZo!/b/dDOyEHb5CAAA&amp;bo=ggckAgAAAAADB4E!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>扩展渐变端点外部的颜色</h2>
+
+<p>当我们创建一个渐变时，我们可以选择使用纯色来填充渐变端点外部的空间。Quartz使用使用渐变边界上的颜色作为填充颜色。我们可以扩展渐变起点、终点或两端的颜色。我们可以扩展使用CGShading对象或CGGradient对象创建的轴向或径向渐变。</p>
+
+<p>图8-7演示了一个轴向渐变，它扩展了起点和终点两侧的区域。图片中的线段显示了渐变的轴线。我们可以看到，填充颜色与起点和终点的颜色是对应的。</p>
+
+<p>Figure 8-7  Extending an axial gradient</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_axial2.gif" alt="image" /></p>
+
+<p>图8-8对比了一个未使用扩展的径向渐变和一个在起点和终点两侧使用扩展的径向渐变。Quartz获取了起点和终点的颜色值，并使用这边纯色值来扩展立面。</p>
+
+<p>Figure 8-8  Extending a radial gradient</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/extend_radial.gif" alt="image" /></p>
+
+<h2>使用CGGradient对象</h2>
+
+<p>一个CGGradient对象是一个渐变的抽象定义&mdash;它简单地指定了颜色值和位置，但没有指定几何形状。我们可以在轴向和径向几何形状中使用这个对象。作为一个抽象定义，CGGradient对象可能比CGShading对象更容易重用。没有将几何形状存储在CGGradient对象中，这样允许我们使用相同的颜色方案来绘制不同的几何图形，而不需要为多个图形创建多个CGGradient对象。</p>
+
+<p>因为Quartz为我们计算渐变，使用一个CGGradient对象来创建和绘制一个渐变则更直接，只需要以下几步：</p>
+
+<ol>
+<li>创建一个CGGradient对象，提供一个颜色空间，一个饱含两个或更多颜色组件的数组，一个包含两个或多个位置的数组，和两个数组中元素的个数。</li>
+<li>调用CGContextDrawLinearGradient或CGContextDrawRadialGradient函数并提供一个上下文、一个CGGradient对象、绘制选项和开始结束几何图形来绘制渐变。</li>
+<li>当不再需要时释放CGGradient对象。</li>
+</ol>
+
+
+<p>一个位置是一个值区间在0.0到1.0之间的CGFloat值，它指定了沿着渐变的轴线的标准化距离。值0.0指定的轴线的起点，1.0指定了轴线的终点。其它的值指定了一个距离的比例。最低限度情况下，Quartz使用两个位置值。如果我们传递NULL值作为位置数组参数，则Quartz使用0作为第一个位置，1作为第二个位置。</p>
+
+<p>每个颜色的颜色组件的数目取决于颜色空间。对于离屏绘制，我们使用一个RGB颜色空间。因为Quartz使用alpha来绘制，每个离屏颜色都有四个组件&mdash;红、绿、蓝和alpha。所以，对于离屏绘制，我们提供的颜色组件数组的元素的数目必须是位置数目的4倍。Quartz的RGBA颜色组件可以在0.0到1.0之间改变。</p>
+
+<p>代码清单8-1是创建一个CGGradient对象的代码片断。在声明了必须的变量后，代码设置了位置和颜色组件数组。然后创建了一个通用的RGB颜色空间。(在iOS中，不管RGB颜色空间是否可用，我们都应该调用CGColorSpaceCreateDeviceRGB)。然后，它传递必要的参数到CGGradientCreateWithColorComponents函数。我们同样可以使用CGGradientCreateWithColors，如果我们的程序设置了CGColor对象，这是一种便捷的方法。</p>
+
+<p>Listing 8-1  Creating a CGGradient object</p>
+
+<pre><code>CGGradientRef myGradient;
+CGColorSpaceRef myColorspace;
+size_t num_locations = 2;
+CGFloat locations[2] = { 0.0, 1.0 };
+CGFloat components[8] = { 1.0, 0.5, 0.4, 1.0,  // Start color
+                          0.8, 0.8, 0.3, 1.0 }; // End color
+
+myColorspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+myGradient = CGGradientCreateWithColorComponents (myColorspace, components,
+                          locations, num_locations);
+</code></pre>
+
+<p>在创建了CGGradient对象后，我们可以使用它来绘制一个轴向或线性渐变。代码清单8-2声明并设置了线性渐变的起始点然后绘制渐变。图8-1显示了结果。代码没有演示如何获取CGContext对象。</p>
+
+<p>Listing 8-2  Painting an axial gradient using a CGGradient object</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+myStartPoint.x = 0.0;
+myStartPoint.y = 0.0;
+myEndPoint.x = 1.0;
+myEndPoint.y = 1.0;
+CGContextDrawLinearGradient (myContext, myGradient, myStartPoint, myEndPoint, 0);
+</code></pre>
+
+<p>代码清单8-3使用代码清单8-1中创建的CGGradient对象来绘制图8-9中径向渐变。这个例子同时也演示了使用纯色来填充渐变的扩展区域。</p>
+
+<p>Listing 8-3  Painting a radial gradient using a CGGradient object</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+CGFloat myStartRadius, myEndRadius;
+myStartPoint.x = 0.15;
+myStartPoint.y = 0.15;
+myEndPoint.x = 0.5;
+myEndPoint.y = 0.5;
+myStartRadius = 0.1;
+myEndRadius = 0.25;
+CGContextDrawRadialGradient (myContext, myGradient, myStartPoint,
+                         myStartRadius, myEndPoint, myEndRadius,
+                         kCGGradientDrawsAfterEndLocation);
+</code></pre>
+
+<p>Figure 8-9  A radial gradient painted using a CGGradient object</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_cggradient.jpg" alt="image" /></p>
+
+<p>图8-4中的径向渐变使用代码清单8-4中的变量来创建。</p>
+
+<p>Listing 8-4  The variables used to create a radial gradient by varying alpha</p>
+
+<pre><code>CGPoint myStartPoint, myEndPoint;
+CGFloat myStartRadius, myEndRadius;
+myStartPoint.x = 0.2;
+myStartPoint.y = 0.5;
+myEndPoint.x = 0.65;
+myEndPoint.y = 0.5;
+myStartRadius = 0.1;
+myEndRadius = 0.25;
+size_t num_locations = 2;
+CGFloat locations[2] = { 0, 1.0 };
+CGFloat components[8] = { 0.95, 0.3, 0.4, 1.0,
+                          0.95, 0.3, 0.4, 0.1 };
+</code></pre>
+
+<p>代码清单8-5显示了用于创建图8-10中的灰色渐变的变量，其中有3个位置。</p>
+
+<p>Listing 8-5  The variables used to create a gray gradient</p>
+
+<pre><code>size_t num_locations = 3;
+CGFloat locations[3] = { 0.0, 0.5, 1.0};
+CGFloat components[12] = {  1.0, 1.0, 1.0, 1.0,
+                            0.5, 0.5, 0.5, 1.0,
+                            1.0, 1.0, 1.0, 1.0 };
+</code></pre>
+
+<p>Figure 8-10  An axial gradient with three locations</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/gray_gradient_3.jpg" alt="image" /></p>
+
+<h2>使用CGShading对象</h2>
+
+<p>我们通过调用函数CGShadingCreateAxial或CGShadingCreateRadial创建一个CGShading对象来设置一个渐变，调用这些函数需要提供以下参数：</p>
+
+<ol>
+<li>CGColorSpace对象：颜色空间</li>
+<li>起始点和终点。对于轴向渐变，有轴线的起始点和终点的坐标。对于径向渐变，有起始圆和终点圆中心的坐标。</li>
+<li>用于定义渐变区域的圆的起始半径与终止半径。</li>
+<li>一个CGFunction对象，可以通过CGFunctionCreate函数来获取。这个回调例程必须返回绘制到特定点的颜色值。</li>
+<li>一个布尔值，用于指定是否使用纯色来绘制起始点与终点的扩展区域。</li>
+</ol>
+
+
+<p>我们提供给CGShading创建函数的CGFunction对象包含一个回调结构体，及Quartz需要实现这个回调的所有信息。也许设置CGShasing对象的最棘手的部分是创建CGFunction对象。当我们调用CGFunctionCreate函数时，我们提供以下参数：</p>
+
+<ol>
+<li>指向回调所需要的数据的指针</li>
+<li>回调的输入值的个数。Quartz要求回调携带一个输入值。</li>
+<li>一个浮点数的数组。Quartz只会提供数组中的一个元素给回调函数。一个转入值的范围是0(渐变的开始点的颜色)到1(渐变的结束点的颜色)。</li>
+<li>回调提供的输出值的数目。对于每一个输入值，我们的回调必须为每个颜色组件提供一个值，以及一个alpha值来指定透明度。颜色组件值由Quartz提供的颜色空间来解释，并会提供给CGShading创建函数。例如，如果我们使用RGB颜色空间，则我们提供值4作为输出值(R,G,B,A)的数目。</li>
+<li>一个浮点数的数组，用于指定每个颜色组件的值及alpha值。</li>
+<li><p>一个回调数据结构，包含结构体的版本(设置为0)、生成颜色组件值的回调、一个可选的用于释放回调中info参数表示的数据。该回调类似于以下格式：</p>
+
+<p> void myCalculateShadingValues (void <em>info, const CGFloat </em>in, CGFloat *out)</p></li>
+</ol>
+
+
+<p>在创建CGShading对象后，如果需要我们可以设置额外的裁减操作。然后调用CGContextDrawShading函数来使用渐变来绘制上下文的裁减区域。当调用这个函数时，Quartz调用回调函数来获取从起点到终点这个范围内的颜色值。</p>
+
+<p>当不再需要CGShading对象时，我们调用CGShadingRelease来释放它。</p>
+
+<p>下面我们将一步步地通过代码来看看如何使用CGShading对象来绘制渐变。</p>
+
+<h3>使用CGShading对象绘制一个轴向渐变</h3>
+
+<p>绘制轴向和径向渐变的步骤是差不多的。这个例子演示了如何使用一个CGShading对象来绘制一个轴向渐变，并在图形上下文中绘制一个半圆形的裁减路径，然后将渐变绘制到裁减区域来达到图8-11的效果。</p>
+
+<p>Figure 8-11  An axial gradient that is clipped and painted</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/axial_shading_arc.gif" alt="image" /></p>
+
+<p>为了绘制图中的轴向渐变，需要按以下步骤来处理：</p>
+
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建轴向渐变的CGShading对象</li>
+<li>裁减上下文</li>
+<li>使用CGShading对象来绘制轴向渐变</li>
+<li>释放对象</li>
+</ol>
+
+
+<h4>设置CGFunction对象来计算颜色值</h4>
+
+<p>我们可以以我们想要的方式来计算颜色值，我们的颜色计算函数包含以下三个参数：</p>
+
+<ol>
+<li>void *info：这个值可以为NULL或者是一个指向传递给CGShading创建函数的数据。</li>
+<li>const CGFloat *in：Quartz传递in数组给回调。数组中的值必须在为CGFunction对象定义的输入值范围内。例如，输入范围是0到1；看代码清单8-7</li>
+<li>CGFloat *out：我们的回调函数传递out数组给Quartz。它包含用于颜色空间中每个颜色组件的元素及一个alpha值。输出值应该在CGFunction对象中定义的输出值的范围内，例如，输出范围是0到1；看代码清单8-7。</li>
+</ol>
+
+
+<p>更多关于参数的信息可以查看CGFunctionEvaluateCallback。</p>
+
+<p>代码清单8-6演示了一个函数，它通过将一个常数数组中的值乘以输入值来计算颜色组件值。因为输入值在0到1之间，所以输入值位于黑色(对于RGB来说值为0, 0, 0)和紫色(1, 0, 0.5)之间。注意最后一个组件通常设置为1，表示颜色总是完全不透明的。</p>
+
+<p>Listing 8-6  Computing color component values</p>
+
+<pre><code>static void myCalculateShadingValues (void *info,
+                            const CGFloat *in,
+                            CGFloat *out)
+{
+    CGFloat v;
+    size_t k, components;
+    static const CGFloat c[] = {1, 0, .5, 0 };
+
+    components = (size_t)info;
+
+    v = *in;
+    for (k = 0; k &lt; components -1; k++)
+        *out++ = c[k] * v;
+     *out++ = 1;
+}
+</code></pre>
+
+<p>在写完回调计算颜色值后，我们将其打包以作为CGFunction对象的一部分。代码清单显示了一个函数，它创建了一个包含代码清单8-6中的回调函数的CGFunction对象。</p>
+
+<p>Listing 8-7  Creating a CGFunction object</p>
+
+<pre><code>static CGFunctionRef myGetFunction (CGColorSpaceRef colorspace)
+{
+    size_t numComponents;
+    static const CGFloat input_value_range [2] = { 0, 1 };
+    static const CGFloat output_value_ranges [8] = { 0, 1, 0, 1, 0, 1, 0, 1 };
+    static const CGFunctionCallbacks callbacks = { 0,
+                                &amp;myCalculateShadingValues,
+                                NULL };
+
+    numComponents = 1 + CGColorSpaceGetNumberOfComponents (colorspace);
+    return CGFunctionCreate ((void *) numComponents,
+                                1, 
+                                input_value_range, 
+                                numComponents, 
+                                output_value_ranges, 
+                                &amp;callbacks);
+}
+</code></pre>
+
+<h4>创建一个轴向渐变的CGShading对象</h4>
+
+<p>为了创建一个CGShading对象，我们调用CGShadingCreateAxial函数，如代码清单8-8所示。我们传递一个颜色空间，开始点和结束点，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+
+<p>Listing 8-8  Creating a CGShading object for an axial gradient</p>
+
+<pre><code>CGPoint     startPoint,
+            endPoint;
+CGFunctionRef myFunctionObject;
+CGShadingRef myShading;
+
+startPoint = CGPointMake(0,0.5);
+endPoint = CGPointMake(1,0.5);
+colorspace = CGColorSpaceCreateDeviceRGB();
+myFunctionObject = myGetFunction (colorspace);
+
+myShading = CGShadingCreateAxial (colorspace,
+                        startPoint, endPoint,
+                        myFunctionObject,
+                        false, false);
+</code></pre>
+
+<h4>裁减上下文</h4>
+
+<p>当绘制一个渐变时，Quartz填充当前上下文。绘制一个渐变与操作颜色和模式不同，后者是用于描边或填充一个路径对象。因此，如果要我们的渐变出现在一个特定形状中，我们需要裁减上下文。代码清单8-9的代码添加了一个半圆形到当前上下文，以便渐变绘制到这个裁减区域，如图8-11。</p>
+
+<p>如果我们仔细看，会发现代码绘制的是一个半圆，而图中显示的是一个半椭圆形。为什么呢？我们会看到，当我们查看后面完整的绘制代码时，上下文被缩放了。稍后会详细说明。虽然我们不需要使用缩放或裁减，这些在Quartz 2D中的选项可以帮助我们达到有趣的效果。</p>
+
+<p>Listing 8-9  Adding a semicircle clip to the graphics context</p>
+
+<pre><code>CGContextBeginPath (myContext);
+CGContextAddArc (myContext, .5, .5, .3, 0,
+                my_convert_to_radians (180), 0);
+CGContextClosePath (myContext);
+CGContextClip (myContext);
+</code></pre>
+
+<h4>使用CGShading对象来绘制轴向渐变</h4>
+
+<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+
+<pre><code>CGContextDrawShading (myContext, myShading);
+</code></pre>
+
+<h4>释放对象</h4>
+
+<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-10所示：</p>
+
+<p>Listing 8-10  Releasing objects</p>
+
+<pre><code>CGShadingRelease (myShading);
+CGColorSpaceRelease (colorspace);
+CGFunctionRelease (myFunctionObject);
+</code></pre>
+
+<h4>使用CGShading对象绘制轴向渐变的完整例程</h4>
+
+<p>代码清单8-11显示了绘制一个轴向渐变的完整例程，使用8-7中的CGFunction对象和8-6中的回调函数。</p>
+
+<p>Listing 8-11  Painting an axial gradient using a CGShading object</p>
+
+<pre><code>void myPaintAxialShading (CGContextRef myContext,
+                            CGRect bounds)
+{
+    CGPoint     startPoint,
+                endPoint;
+    CGAffineTransform myTransform;
+    CGFloat width = bounds.size.width;
+    CGFloat height = bounds.size.height;
+
+
+    startPoint = CGPointMake(0,0.5); 
+    endPoint = CGPointMake(1,0.5);
+
+    colorspace = CGColorSpaceCreateDeviceRGB();
+    myShadingFunction = myGetFunction(colorspace);
+
+    shading = CGShadingCreateAxial (colorspace, 
+                                 startPoint, endPoint,
+                                 myShadingFunction,
+                                 false, false);
+
+    myTransform = CGAffineTransformMakeScale (width, height);
+    CGContextConcatCTM (myContext, myTransform);
+    CGContextSaveGState (myContext);
+
+    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1));
+    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+
+    CGContextBeginPath (myContext);
+    CGContextAddArc (myContext, .5, .5, .3, 0,
+                        my_convert_to_radians (180), 0);
+    CGContextClosePath (myContext);
+    CGContextClip (myContext);
+
+    CGContextDrawShading (myContext, shading);
+    CGColorSpaceRelease (colorspace);
+    CGShadingRelease (shading);
+    CGFunctionRelease (myShadingFunction);
+
+    CGContextRestoreGState (myContext); 
+}
+</code></pre>
+
+<h3>使用CGShading对象绘制一个径向渐变</h3>
+
+<p>这个例子演示了如何使用CGShading对象来生成如图8-12所示的输出</p>
+
+<p>Figure 8-12  A radial gradient created using a CGShading object</p>
+
+<p><img src="https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/radial_shading.gif" alt="image" /></p>
+
+<p>为了绘制一个径向渐变，我们需要按以下步骤来处理：</p>
+
+<ol>
+<li>设置CGFunction对象来计算颜色值</li>
+<li>创建径向渐变的CGShading对象</li>
+<li>使用CGShading对象来绘制径向渐变</li>
+<li>释放对象</li>
+</ol>
+
+
+<h4>设置CGFunction对象来计算颜色值</h4>
+
+<p>计算径向渐变和轴向渐变颜色值的函数没有什么区别。事实上，我们可以依照上面的轴向的&#8221;设置CGFunction对象来计算颜色值&#8221;。代码清单8-12用于计算颜色，使用颜色按正弦变化。图8-12与图8-11的结果非常不同。虽然颜色输出值不同，代码清单8-12的代码与8-6中的函数遵循相同的原型。每个函数获取一个输入值并计算N个值，即颜色空间的每个颜色组件加一个alpha值。</p>
+
+<p>Listing 8-12  Computing color component values</p>
+
+<pre><code>static void  myCalculateShadingValues (void *info,
+                                const CGFloat *in,
+                                CGFloat *out)
+{
+    size_t k, components;
+    double frequency[4] = { 55, 220, 110, 0 };
+    components = (size_t)info;
+    for (k = 0; k &lt; components - 1; k++)
+        *out++ = (1 + sin(*in * frequency[k]))/2;
+     *out++ = 1; // alpha
+}
+</code></pre>
+
+<p>在写完颜色计算函数后调用它，我们需要创建一个CGFunction对象，如在轴向中&#8221;设置CGFunction对象来计算颜色值&#8221;所描述的一样。</p>
+
+<h4>创建径向渐变的CGShading对象</h4>
+
+<p>为了创建一个CGShading对象或者一个径向渐变，我们调用CGShadingCreateRadial函数，如代码清单8-13所求，传递一个颜色空间、开始点和结束点，开始半径和结束半径，一个CGFunction对象，和一个用于指定是否填充渐变的开始点和结束点扩展的布尔值。</p>
+
+<p>Listing 8-13  Creating a CGShading object for a radial gradient</p>
+
+<pre><code>CGPoint startPoint, endPoint;
+CGFloat startRadius, endRadius;
+
+startPoint = CGPointMake(0.25,0.3);
+startRadius = .1;
+endPoint = CGPointMake(.7,0.7);
+endRadius = .25;
+colorspace = CGColorSpaceCreateDeviceRGB();
+myShadingFunction = myGetFunction (colorspace);
+CGShadingCreateRadial (colorspace,
+                startPoint,
+                startRadius,
+                endPoint,
+                endRadius,
+                myShadingFunction,
+                false,
+                false);
+</code></pre>
+
+<h4>使用CGShading对象来绘制径向渐变</h4>
+
+<p>调用函数CGContextDrawShading使用CGShading对象为指定的颜色渐变来填充当前上下文：</p>
+
+<pre><code>CGContextDrawShading (myContext, myShading);
+</code></pre>
+
+<p>注意我们使用相同的函数来绘制渐变，而不管它是轴向还是径向。</p>
+
+<h4>释放对象</h4>
+
+<p>当我们不再需要CGShading对象时，可以调用函数CGShadingRelease来释放它。我们需要同时释放CGColorSpace对象和CGFunction对象，如代码清单8-14所示：</p>
+
+<p>Listing 8-10  Releasing objects</p>
+
+<pre><code>CGShadingRelease (myShading);
+CGColorSpaceRelease (colorspace);
+CGFunctionRelease (myFunctionObject);
+</code></pre>
+
+<h4>使用CGShading对象绘制径向渐变的完整例程</h4>
+
+<p>代码清单8-15显示了绘制一个轴径向渐变的完整例程，使用8-7中的CGFunction对象和8-12中的回调函数。</p>
+
+<p>Listing 8-15  A routine that paints a radial gradient using a CGShading object</p>
+
+<pre><code>void myPaintRadialShading (CGContextRef myContext,
+                            CGRect bounds);
+{
+    CGPoint startPoint,
+            endPoint;
+    CGFloat startRadius,
+            endRadius;
+    CGAffineTransform myTransform;
+    CGFloat width = bounds.size.width;
+    CGFloat height = bounds.size.height;
+
+    startPoint = CGPointMake(0.25,0.3); 
+    startRadius = .1;  
+    endPoint = CGPointMake(.7,0.7); 
+    endRadius = .25; 
+
+    colorspace = CGColorSpaceCreateDeviceRGB(); 
+    myShadingFunction = myGetFunction (colorspace);
+
+    shading = CGShadingCreateRadial (colorspace, 
+                            startPoint, startRadius,
+                            endPoint, endRadius,
+                            myShadingFunction,
+                            false, false);
+
+    myTransform = CGAffineTransformMakeScale (width, height); 
+    CGContextConcatCTM (myContext, myTransform); 
+    CGContextSaveGState (myContext); 
+
+    CGContextClipToRect (myContext, CGRectMake(0, 0, 1, 1)); 
+    CGContextSetRGBFillColor (myContext, 1, 1, 1, 1);
+    CGContextFillRect (myContext, CGRectMake(0, 0, 1, 1));
+
+    CGContextDrawShading (myContext, shading); 
+    CGColorSpaceRelease (colorspace); 
+    CGShadingRelease (shading);
+    CGFunctionRelease (myShadingFunction);
+
+    CGContextRestoreGState (myContext); 
+}
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/">Quartz 2D编程指南之七：阴影</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-05T21:47:51+08:00" pubdate data-updated="true">Dec 5<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-qi-:yin-ying/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>阴影是绘制在一个图形对象下的且有一定偏移的图片，它用于模拟光源照射到图形对象上所形成的阴影效果，如果7-1所示。文本也可以有阴影。阴影可以让一幅图像看上去是立体的或者是浮动的。</p>
+
+<p>Figure 7-1  A shadow</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/angle.gif" alt="image" /></p>
+
+<p>阴影有三个属性：</p>
+
+<ol>
+<li>x偏移值，用于指定阴影相对于图片在水平方向上的偏移值。</li>
+<li>y偏移值，用于指定阴影相对于图片在竖直方向上的偏移值。</li>
+<li>模糊(blur)值，用于指定图像是有一个硬边(hard edge，如图7-2左边图片所示)，还是一个漫射边(diffuse edge，如图7-1右边图片所示)</li>
+</ol>
+
+
+<p>本章将描述阴影是如何工作的及如何用Quartz 2D API来创建阴影。</p>
+
+<p>Figure 7-2  A shadow with no blur and another with a soft edge</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blur_value.gif" alt="image" /></p>
+
+<h2>阴影是如何工作的</h2>
+
+<p>Quartz中的阴影是图形状态的一部分。我们可以调用函数CGContextSetShadow来创建，并传入一个图形上下文、偏移值及模糊值。阴影被设置后，任何绘制的对象都有一个阴影，且该阴影在设备RGB颜色空间中呈现出黑色的且alpha值为1/3。换句话说，阴影是用RGBA值{0, 0, 0, 1.0/3.0}设置的。</p>
+
+<p>我们可以调用函数CGContextSetShadowWithColor来设置彩色阴影，并传递一个图形上下文、 偏移值、模糊值有CGColor颜色对象。颜色值依赖于颜色空间。</p>
+
+<p>如何在调用CGContextSetShadow或CGContextSetShadowWithColor之前保存了图形状态，我们可以通过恢复图形状态来关闭阴影。我们也可以通过设置阴影颜色为NULL来关闭阴影。</p>
+
+<h2>基于图形上下文的阴影绘制惯例</h2>
+
+<p>偏移值指定了阴影相对于相关图像的位置。这些偏移值由图形上下文来描述，并用于计算阴影的位置：</p>
+
+<ol>
+<li>一个正值的x偏移量指定阴影位于图形对象的右侧。</li>
+<li>在Mac OS X中，正值的y指定阴影位于图形对象的上边，这与Quartz 2D默认的坐标值匹配。</li>
+<li>在iOS中，如果我们用Quartz 2D API来创建PDF或者位图图形上下文，则正值的y指定阴影位于图形对象的上边。</li>
+<li>在iOS中，如果图形上下文是由UIKit创建的，则正值的y指定阴影位于图形对象的下边。这与UIKit坐标系统相匹配。</li>
+<li>阴影绘制惯例不受CTM影响</li>
+</ol>
+
+
+<h2>绘制阴影</h2>
+
+<p>按照如下步骤来绘制阴影</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>调用函数CGContextSetShadow，传递相应的值</li>
+<li>使用阴影绘制所有的对象</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>按照如下步骤来绘制彩色阴影</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>创建一个CGColorSpace对象，确保Quartz能正确地解析阴影颜色</li>
+<li>创建一个CGColor对象来指定阴影的颜色</li>
+<li>调用CGContextSetShadowWithColor，并传递相应的值</li>
+<li>使用阴影绘制所有的对象</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>图7-3显示了两个带有阴影的矩形，其中一个是彩色阴影。</p>
+
+<p>Figure 7-3  A colored shadow and a gray shadow</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/code_shadows.gif" alt="image" /></p>
+
+<p>列表清单显示了如何创建图7-3中的图像。</p>
+
+<p>Listing 7-1  A function that sets up shadows</p>
+
+<pre><code>void MyDrawWithShadows (CGContextRef myContext, float wd, float ht);
+{
+    CGSize          myShadowOffset = CGSizeMake (-15,  20);
+    float           myColorValues[] = {1, 0, 0, .6};
+    CGColorRef      myColor;
+    CGColorSpaceRef myColorSpace;
+
+    CGContextSaveGState(myContext);
+
+    CGContextSetShadow (myContext, myShadowOffset, 5); 
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3 + 75, ht/2 , wd/4, ht/4));
+
+    myColorSpace = CGColorSpaceCreateDeviceRGB ();
+    myColor = CGColorCreate (myColorSpace, myColorValues);
+    CGContextSetShadowWithColor (myContext, myShadowOffset, 5, myColor);
+
+    // Your drawing code here
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 1);
+    CGContextFillRect (myContext, CGRectMake (wd/3-75,ht/2-100,wd/4,ht/4));
+
+    CGColorRelease (myColor);
+    CGColorSpaceRelease (myColorSpace); 
+
+    CGContextRestoreGState(myContext);
+}
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/4">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/2">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (58)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

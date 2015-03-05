@@ -1,0 +1,1705 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6- &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/4">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/">Quartz 2D编程指南之六：模式(Pattern)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-05T16:35:04+08:00" pubdate data-updated="true">Dec 5<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/05/quartz-2dbian-cheng-zhi-nan-zhi-liu-:mo-shi-pattern/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>模式(Pattern)是绘制操作的一个序列，这些绘制操作可以重复地绘制到一个图形上下文上。我们可以像使用颜色一样使用这些模式。当我们使用pattern来绘制时，Quartz将Page分割成模式单元格的集合，其中每个单元格的大小不是模式图片的大小，并使用我们提供的回调函数来绘制这些单元格。图6-1演示了一个绘制到window图形上下文的模式。</p>
+
+<p>Figure 6-1  A pattern drawn to a window</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/patterned_window.gif" alt="image" /></p>
+
+<h2>模式的骨架(Anatomy)</h2>
+
+<p>模式单元格是模式的基础组件。图6-1中的模式的单元格如图6-2所示。其中黑色边框不是模式单元格的一部分；之所以画出来是为了显示模式单元格的边界。</p>
+
+<p>Figure 6-2  A pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_cell_wborder.gif" alt="image" /></p>
+
+<p>该模式单元格的大小包含四个带颜色的矩形以及这些矩形上部及右侧的白色区域，如图6-3所示。每个模式单元格的黑色边框不是单元格的一部分；画出来只是为是标明单元格的边界。当我们创建一个模式单元格时，我们需要定义单元格的边界并在这个范围内进行绘制。</p>
+
+<p>Figure 6-3  Pattern cells with black rectangles drawn to show the bounds of each cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_parts_1.gif" alt="image" /></p>
+
+<p>我们可以指定水平和竖直方向上两个单元格之间的间距。图6-3所绘制的单元格是相互紧挨着的。而图6-4在两个方向上都指定了单元格之间的间距。我们可以为两个方向指定不同的间距。我们亦可以指定间距为负数，这样单元格便会重叠。</p>
+
+<p>Figure 6-4  Spacing between pattern cells</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_part_2.gif" alt="image" /></p>
+
+<p>当我们绘制一个模式单元格时，Quartz使用<strong>模式空间(pattern space)</strong>作为坐标系统。模式空间是一个抽象空间，它会使用我们创建模式时指定的变换矩阵(pattern matrix)来映射到默认用户空间。</p>
+
+<pre><code>注意：模式空间与用户空间是分开的。未转换的模式空间映射到基础的用户空间(未转换的)，而不管当前转换矩阵(CTM)。当我们在模式空间上应用转换时，Quartz只将转换应用于模式空间。
+</code></pre>
+
+<p>如果我们不想要Quartz来转换模式单元格，我们可以指定单位矩阵。然而，我们可以使用转换矩阵来达到有趣的效果。图6-5显示了缩放6-2中的模式单元格的效果。图6-6旋转了这些单元格。图6-7则平移了这些单元格。
+Figure 6-5  A scaled pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_halfbyonehalf.gif" alt="image" /></p>
+
+<p>Figure 6-6  A rotated pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_2PIdiv6.gif" alt="image" /><br/>
+Figure 6-7  A translated pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pattern_5_5_translate.gif" alt="image" /></p>
+
+<h2>着色模式(Colored Patterns)和模板模式(Stencil Patterns)</h2>
+
+<p>着色模式有与其相关的固有颜色。如果修改了创建模式单元格的颜色，则模式也便失去了意义。图6-8中显示的苏格兰格子就是着色模式的一个例子。着色模式中的颜色是模式单元格创建流程的一部分，而不是绘制流程的一部分。</p>
+
+<p>Figure 6-8  A colored pattern has inherent color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tartan.gif" alt="image" /></p>
+
+<p>而其它模式只限定了形状，因此可以认为是模板模式(或者是非着色模式、甚至可以作为图像蒙板)。图6-9中展示的红色和黑色星星就是使用相同的模式单元格。单元格由一个五角星组成。当定义模式单元格时，没有与之相关的颜色。颜色值是在绘制过程中指定的，而不是创建过程的一部分。</p>
+
+<p>Figure 6-9  A stencil pattern does not have inherent color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_patterns.gif" alt="image" /></p>
+
+<p>在Quartz 2D中，我们可以创建这两种模式。</p>
+
+<h2>平铺(Tiling)</h2>
+
+<p>平铺(Tiling)是将模式单元格绘制到页面(Page)的某个部分的过程。当Quartz将模式渲染到一个设备时，Quartz可能需要调整模式以适应设备空间。即，在用户空间定义的模式单元格在渲染到设备时可能无法精确匹配，这是由用户空间单元和设备像素之间的差异导致的。</p>
+
+<p>Quartz有三个平铺选项，以在必要时调整模式：</p>
+
+<ol>
+<li>没有失真(no distortion): 以细微调整模式单元格之间的间距为代价，但通常不超过一个设备像素。</li>
+<li>最小的失真的恒定间距：设定单元格之间的间距，以细微调整单元大小为代价，但通常不超过一个设备像素。</li>
+<li>恒定间距：设定单元格之间间距，以调整单元格大小为代价，以求尽快的平铺</li>
+</ol>
+
+
+<h2>模式如何工作</h2>
+
+<p>模式操作类似于颜色，我们设置一个填充或描边(stroke)模式，然后调用绘制函数。Quartz使用我们设置的模式作为“涂料”。例如，如果我们要使用纯色绘制一个填充的的矩形，我们首先调用函数(如CGContextSetFillColor)来设置填充颜色。然后调用函数CGContextFillRect以使用我们指定的颜色来填充矩形。为了绘制一个模式，颜色调用函数CGContextSetFillPattern来设置指定的模式。绘制颜色和绘制模式的不同之处在于我们必须先定义一个模式。我们为函数CGContextSetFillPattern提供模式和颜色信息。我们将在下面的绘制着色模式和绘制模板模式章节看到如何创建、设置和绘制模式。</p>
+
+<p>这里有个例子说明Quartz在幕后是如何绘制一个模式的。当我们填充或描边一个模式时，Quartz会按照以下指令来绘制每一个模式单元格：</p>
+
+<ol>
+<li>保存图形状态</li>
+<li>将当前转换矩阵应用到原始的模式单元格上</li>
+<li>连接CTM与模式矩阵</li>
+<li>裁剪模式单元格的边界矩形</li>
+<li>调用绘制回调函数来绘制单元格</li>
+<li>恢复图形状态</li>
+</ol>
+
+
+<p>Quartz会执行所有平铺操作，重复绘制模式单元格到绘制空间，直到渲染满整个空间。我们可以填充和描边一个模式。模式单元格可以是指定的任何大小。如果我们想要看到模式，我们需要确保模式单元格与绘制空间匹配。例如，如果我们的模式单元格是8*10个单位的，而我们用这个模式来描边一个只有2个单位的直线，则这个模式单元格将会被裁剪。这种情况下，我们可能无法辨认出我们的模式。</p>
+
+<h2>绘制着色模式</h2>
+
+<p>绘制着色模式需要执行以下五步操作：</p>
+
+<ol>
+<li>写一个绘制着色模式单元格的回调函数</li>
+<li>设置着色模式的颜色空间</li>
+<li>设置着色模式的骨架(Anatomy)</li>
+<li>指定着色模式作为填充或描边模式</li>
+<li>使用着色模式绘制</li>
+</ol>
+
+
+<p>绘制模板模式也是类似这几步。两者之间的区别在于如何设置颜色信息。</p>
+
+<h3>写一个绘制着色模式单元格的回调函数</h3>
+
+<p>一个模式单元格看起来是什么样的完全取决于我们。在这个例子中，代码清单6-1绘制了图6-2所示的模式单元格。</p>
+
+<p>Listing 6-1  A drawing callback that draws a colored pattern cell</p>
+
+<pre><code>#define H_PATTERN_SIZE 16
+#define V_PATTERN_SIZE 18
+
+void MyDrawColoredPattern (void *info, CGContextRef myContext)
+{
+    CGFloat subunit = 5; 
+
+    CGSize size = {subunit, subunit};
+    CGPoint point1 = {0,0}, point2 = {subunit, subunit}, point3 = {0,subunit}, point4 = {subunit,0};
+    CGRect myRect1 = {point1, size}, myRect2 = {point2, size}, myRect3 = {point3, size}, myRect4 = {point4, size};
+
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, 0.5);
+    CGContextFillRect (myContext, myRect1);
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 0.5);
+    CGContextFillRect (myContext, myRect2);
+    CGContextSetRGBFillColor (myContext, 0, 1, 0, 0.5);
+    CGContextFillRect (myContext, myRect3);
+    CGContextSetRGBFillColor (myContext, .5, 0, .5, 0.5);
+    CGContextFillRect (myContext, myRect4);
+}
+</code></pre>
+
+<p>模式单元格绘制函数是类似于下面这种格式的一个回调函数</p>
+
+<pre><code>typedef void (*CGPatternDrawPatternCallback) (
+                        void *info,
+                        CGContextRef context
+    );
+</code></pre>
+
+<p>我们可以随意命名我们的回调函数。代码清单6-1中命名为MyDrawColoredPattern。这个回调函数带有两个参数：</p>
+
+<ol>
+<li>info: 一个指向模式相关数据的指针。这个参数是可选的，可以传递NULL。传递给回调的数据与后面创建模式的数据是一样的。</li>
+<li>context: 绘制模式单元格的图形上下文</li>
+</ol>
+
+
+<p>代码清单6-1中绘制的模式单元格是随意的。以下是一些关于绘制代码的重要信息：</p>
+
+<ol>
+<li>需要声明模式大小。在绘制时我们需要记住模式大小。在这个例子中，大小是全局声明的，绘制函数没有具体提到大小，除了在注释中。然后，我们将模式大小指定给Quartz 2D。</li>
+<li>绘制函数后面是由CGPatternDrawPatternCallback回调函数类型定义定义的原型</li>
+<li>代码中执行的绘制设置了颜色，让其成为一个着色模式。</li>
+</ol>
+
+
+<h3>设置着色模式的颜色空间</h3>
+
+<p>代码清单6-1中的代码使用颜色来绘制模式单元格。我们必须设置基本的模式颜色空间为NULL，以确保Quartz使用绘制路径指定的颜色来绘制，如代码清单6-2所示。</p>
+
+<p>Listing 6-2  Creating a base pattern color space</p>
+
+<pre><code>CGColorSpaceRef patternSpace;
+
+// 创建模式颜色空间，并传递NULL作为参数
+patternSpace = CGColorSpaceCreatePattern (NULL);
+
+// 在模式颜色空间中设置填充颜色
+CGContextSetFillColorSpace (myContext, patternSpace);
+
+// 释放模式颜色空间
+CGColorSpaceRelease (patternSpace);
+</code></pre>
+
+<h3>设置着色模式的骨架</h3>
+
+<p>一个模式的骨架基本信息保存在CGPattern对象中。我们调用CGPatternCreate函数来创建一个CGPattern对象，其原型如代码清单6-3所示：</p>
+
+<p>Listing 6-3  The CGPatternCreate function prototype</p>
+
+<pre><code>CGPatternRef CGPatternCreate (  void *info,
+                                CGRect bounds,
+                                CGAffineTransform matrix,
+                                CGFloat xStep,
+                                CGFloat yStep,
+                                CGPatternTiling tiling,
+                                bool isColored,
+                                const CGPatternCallbacks *callbacks );
+</code></pre>
+
+<p>其中，</p>
+
+<ol>
+<li>info：是一个指针，指向我们要传递给绘制回调函数的数据</li>
+<li>bound：指定模式单元格的大小</li>
+<li>matrix：指定模式矩阵，它将模式坐标系统映射到图形上下文的默认坐标系统。如果希望两个坐标系统是一样的，则可以使用单位矩阵。</li>
+<li>xStep, yStep：指定单元格之间的水平和竖直间距。</li>
+<li>tiling：平铺模式，可以是kCGPatternTilingNoDistortion、kCGPatternTilingConstantSpacingMinimalDistortion、kCGPatternTilingConstantSpacing</li>
+<li>isColored：指定模式单元格是着色模式(true)还是模板模式(false)</li>
+<li><p>callbacks：是一个指向CGPatternCallbacks结构体的指针，则定义如下：</p>
+
+<p> struct CGPatternCallbacks
+ {
+     unsigned int version;
+     CGPatternDrawPatternCallback drawPattern;
+     CGPatternReleaseInfoCallback releaseInfo;
+ };</p></li>
+</ol>
+
+
+<p>我们可以设置version为0。drawPattern是指向绘制回调的指针。releaseInfo是指向一个回调函数，该回调在释放CGPattern对象时被调用，以释放存储在我们传递给绘制回调的info参数中的数据。如果在这个参数中没有传递任何数据，则设置该域为NULL。</p>
+
+<h3>指定着色模式作为填充或描边模式</h3>
+
+<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+
+<p>这两个函数包含以下几个参数：</p>
+
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+
+
+<p>虽然着色模式提供了自己的颜色，我们仍然需要传递一个单一的alpha值来告诉Quartz在绘制时着色模式的透明度。alpha值的范围在0到1中。可以如以下代码来设置着色模式的透明度：</p>
+
+<pre><code>CGFloat alpha = 1;
+
+CGContextSetFillPattern (myContext, myPattern, &amp;alpha);
+</code></pre>
+
+<h3>使用颜色模式绘制</h3>
+
+<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+
+<h3>完整示例</h3>
+
+<p>代码清单6-4包含一个绘制着色模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+
+<p>Listing 6-4  A function that paints a colored pattern</p>
+
+<pre><code>void MyColoredPatternPainting (CGContextRef myContext,
+                 CGRect rect)
+{
+    CGPatternRef    pattern;
+    CGColorSpaceRef patternSpace;
+    CGFloat         alpha = 1,
+                    width, height;
+    static const    CGPatternCallbacks callbacks = {0, 
+                                        &amp;MyDrawPattern,
+                                        NULL};
+
+    CGContextSaveGState (myContext);
+    patternSpace = CGColorSpaceCreatePattern (NULL);
+    CGContextSetFillColorSpace (myContext, patternSpace);
+    CGColorSpaceRelease (patternSpace);
+
+    pattern = CGPatternCreate (NULL, 
+                    CGRectMake (0, 0, H_PSIZE, V_PSIZE),
+                    CGAffineTransformMake (1, 0, 0, 1, 0, 0),
+                    H_PATTERN_SIZE, 
+                    V_PATTERN_SIZE, 
+                    kCGPatternTilingConstantSpacing,
+                    true, 
+                    &amp;callbacks);
+
+    CGContextSetFillPattern (myContext, pattern, &amp;alpha);
+    CGPatternRelease (pattern);
+    CGContextFillRect (myContext, rect);
+    CGContextRestoreGState (myContext);
+}
+</code></pre>
+
+<h2>绘制模板模式</h2>
+
+<p>与绘制着色模式类似，绘制模板模式也有5个步骤：</p>
+
+<ol>
+<li>写一个绘制模板模式单元格的回调函数</li>
+<li>设置模板模式的颜色空间</li>
+<li>设置模板模式的骨架(Anatomy)</li>
+<li>指定模板模式作为填充或描边模式</li>
+<li>使用模板模式绘制</li>
+</ol>
+
+
+<p>绘制模板模式与绘制着色模式的区别在于设置颜色信息。</p>
+
+<h3>写一个绘制模板模式单元格的回调函数</h3>
+
+<p>绘制模板模式单元格的回调与前面描述的绘制颜色模式单元格类似。不同的是绘制模式单元格回调不需要指定颜色值。图6-10中显示的模式单元格即没有从绘制回调中获取颜色。</p>
+
+<p>Figure 6-10  A stencil pattern cell</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/star_stencil.gif" alt="image" /></p>
+
+<p>代码清单6-5绘制了图6-10中的模式单元格。可以看到代码只是简单地创建并填充了一个路径，而没有设置颜色。</p>
+
+<p>Listing 6-5  A drawing callback that draws a stencil pattern cell</p>
+
+<pre><code>#define PSIZE 16    // size of the pattern cell
+
+static void MyDrawStencilStar (void *info, CGContextRef myContext)
+{
+    int k;
+    double r, theta;
+
+    r = 0.8 * PSIZE / 2;
+    theta = 2 * M_PI * (2.0 / 5.0); // 144 degrees
+
+    CGContextTranslateCTM (myContext, PSIZE/2, PSIZE/2);
+
+    CGContextMoveToPoint(myContext, 0, r);
+    for (k = 1; k &lt; 5; k++) {
+        CGContextAddLineToPoint (myContext,
+                    r * sin(k * theta),
+                    r * cos(k * theta));
+    }
+    CGContextClosePath(myContext);
+    CGContextFillPath(myContext);
+}
+</code></pre>
+
+<h3>设置模板模式的颜色空间</h3>
+
+<p>模板模式要求我们设置一个模式颜色空间用于Quartz的绘制，如代码清单6-6所示。</p>
+
+<p>Listing 6-6  Code that creates a pattern color space for a stencil pattern</p>
+
+<pre><code>CGPatternRef pattern;
+CGColorSpaceRef baseSpace;
+CGColorSpaceRef patternSpace;
+
+// 创建一个通用RGB颜色空间。 
+baseSpace = CGColorSpaceCreateWithName (kCGColorSpaceGenericRGB);
+
+// 创建一个模式颜色空间。该颜色空间指定如何表示模式的颜色。后面要设置模式的颜色时，必须使用这个颜色空间来进行设置
+patternSpace = CGColorSpaceCreatePattern (baseSpace);
+
+// 设置颜色空间来在填充模式时使用
+CGContextSetFillColorSpace (myContext, patternSpace);
+
+// 释放模式颜色空间
+CGColorSpaceRelease(patternSpace);
+
+// 释放基础颜色空间
+CGColorSpaceRelease(baseSpace);
+</code></pre>
+
+<h3>设置模板模式的骨架(Anatomy)</h3>
+
+<p>这一步与上面设置着色模式是一样的，不同的是isColored参数需要传递false。</p>
+
+<h3>指定模板模式作为填充或描边模式</h3>
+
+<p>我们可以调用CGContextSetFillPattern或者CGContextSetStrokePattern函数来使用模式进行填充或描边。Quartz可以将模式用于任何填充或描边流程。</p>
+
+<p>这两个函数包含以下几个参数：</p>
+
+<ol>
+<li>图形上下文</li>
+<li>先前创建的CGPattern对象</li>
+<li>颜色组件的数组</li>
+</ol>
+
+
+<p>由于模板模式在绘制回调中不提供颜色值，所以我们必须传递一个颜色给填充或描边函数来告诉Quartz使用什么颜色。代码清单6-7显示了为模板模式设置颜色的例子。</p>
+
+<p>Listing 6-7  Code that sets opacity for a colored pattern</p>
+
+<pre><code>static const CGFloat color[4] = { 0, 1, 1, 0.5 }; //cyan, 50% transparent
+
+CGContextSetFillPattern (myContext, myPattern, color);
+</code></pre>
+
+<h3>使用模板模式绘制</h3>
+
+<p>在完成前面的步骤之后，我们就可以调用Quartz 2D函数来绘制了。我们的模式被当作“涂料”。例如，可以调用CGContextStrokePath, CGContextFillPath, CGContextFillRect或其它函数来绘制。</p>
+
+<h3>完整示例</h3>
+
+<p>代码清单6-8包含一个绘制模板模式的函数。这个函数包含了前面讨论的所有步骤。</p>
+
+<pre><code>#define PSIZE 16
+
+void MyStencilPatternPainting (CGContextRef myContext,
+                                const Rect *windowRect)
+{
+    CGPatternRef pattern;
+    CGColorSpaceRef baseSpace;
+    CGColorSpaceRef patternSpace;
+    static const CGFloat color[4] = { 0, 1, 0, 1 };
+    static const CGPatternCallbacks callbacks = {0, &amp;drawStar, NULL};
+
+    baseSpace = CGColorSpaceCreateDeviceRGB ();
+    patternSpace = CGColorSpaceCreatePattern (baseSpace);
+    CGContextSetFillColorSpace (myContext, patternSpace);
+    CGColorSpaceRelease (patternSpace);
+    CGColorSpaceRelease (baseSpace);
+    pattern = CGPatternCreate(NULL, CGRectMake(0, 0, PSIZE, PSIZE),
+                  CGAffineTransformIdentity, PSIZE, PSIZE,
+                  kCGPatternTilingConstantSpacing,
+                  false, &amp;callbacks);
+    CGContextSetFillPattern (myContext, pattern, color);
+    CGPatternRelease (pattern);
+    CGContextFillRect (myContext,CGRectMake (0,0,PSIZE*20,PSIZE*20));
+}
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/02/quartz-2dbian-cheng-zhi-nan-zhi-wu-:bian-huan/">Quartz 2D编程指南之五：变换</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-02T22:27:17+08:00" pubdate data-updated="true">Dec 2<sup>nd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/02/quartz-2dbian-cheng-zhi-nan-zhi-wu-:bian-huan/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Quartz 2D 绘制模型定义了两种独立的坐标空间：用户空间(用于表现文档页)和设备空间(用于表现设备的本地分辨率)。用户坐标空间用浮点数表示坐标，与设备空间的像素分辨率没有关系。当我们需要一个点或者显示文档时， Quartz会将用户空间坐标系统映射到设备空间坐标系统。因此，我们不需要重写应用程序或添加额外的代码来调整应用程序的输出以适应不同的设备。</p>
+
+<p>我们可以通过操作CTM(current transformation matrix)来修改默认的用户空间。在创建图形上下文后，CTM是单位矩阵，我们可以使用 Quartz的变换函数来修改CTM，从而修改用户空间中的绘制操作。</p>
+
+<p>本章内容包括：</p>
+
+<ol>
+<li>变换操作函数概览</li>
+<li>如何修改CTM</li>
+<li>如何创建一个仿射变换</li>
+<li>如何选择两个相同的变换</li>
+<li>如何获取user-to-device-space变换</li>
+</ol>
+
+
+<h2>Quartz变换函数</h2>
+
+<p>我们可能使用Quartz内置的变换函数方便的平移、旋转和缩放我们的绘图。只需要短短几行代码，我们便可以按顺序应用变换或结合使用变换。图5-1显示了缩放和旋转一幅图片的效果。我们使用的每个变换操作都更新了CTM。CTM总是用于表示用户空间和设备空间的当前映射关系。这种映射确保了应用程序的输出在任何显示器或打印机上看上去都很棒。</p>
+
+<p>Figure 5-1  Applying scaling and rotation</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/spaces.gif" alt="image" /></p>
+
+<p>Quartz 2D API提供了5个函数，以允许我们获取和修改CTM。我们可以旋转、平移、缩放CTM。我们还可以联结一个仿射变换矩阵。</p>
+
+<p>有时我们可以不想操作用户空间，直到我们决定将变换应用到CTM时，Quartz为此允许我们创建应用于此的仿射矩阵。我们可以使用另外一组函数来创建仿射变换，这些变换可以与CTM联结在一起。</p>
+
+<p>我们可以不需要了解矩阵的数学含义而使用这些函数。</p>
+
+<h2>修改CTM(Current Transformation Matrix)</h2>
+
+<p>我们在绘制图像前操作CTM来旋转、缩放或平移page,从而变换我们将要绘制的对象。以变换CTM之前，我们需要保存图形状态，以便绘制后能恢复。我们同样能用仿射矩阵来联结CTM。在本节中，我们将介绍与CTM函数相关的四种操作&mdash;平移、旋转、缩放和联结。</p>
+
+<p>假设我们提供了一个可用的图形上下文、一个指向可绘制图像的矩形的指针和一个可用的CGImage对象，则下面一行代码绘制了一个图像。该行代码可以绘制如图5-2所示的图片。在阅读了本节余下的部分后，我们将看到如何将变换应用于图像。</p>
+
+<pre><code>CGContextDrawImage (myContext, rect, myImage);
+</code></pre>
+
+<p>Figure 5-2  An image that is not transformed</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/normal_rooster.gif" alt="image" /></p>
+
+<p>平移变换根据我们指定的x, y轴的值移动坐标系统的原点。我们通过调用CGContextTranslateCTM函数来修改每个点的x, y坐标值。如图5-3显示了一幅图片沿x轴移动了100个单位，沿y轴移动了50个单位。具体代码如下：</p>
+
+<pre><code>CGContextTranslateCTM (myContext, 100, 50);
+</code></pre>
+
+<p>Figure 5-3  A translated image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/translated_rooster.gif" alt="image" /></p>
+
+<p>旋转变换根据指定的角度来移动坐标空间。我们调用CGContextRotateCTM函数来指定旋转角度(以弧度为单位)。图5-4显示了图片以原点(左下角)为中心旋转45度，代码所下所示：</p>
+
+<pre><code>CGContextRotateCTM (myContext, radians(–45.));
+</code></pre>
+
+<p>由于旋转操作使图片的部分区域置于上下文之外，所以区域外的部分被裁减。我们用弧度来指定旋转角度。如果需要进行旋转操作，下面的代码将会很有用</p>
+
+<pre><code>#include &lt;math.h&gt;
+static inline double radians (double degrees) {return degrees * M_PI/180;}
+</code></pre>
+
+<p>Figure 5-4  A rotated image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rotated_rooster.gif" alt="image" /></p>
+
+<p>缩放操作根据指定的x, y因子来改变坐标空间的大小，从而放大或缩小图像。x, y因子的大小决定了新的坐标空间是否比原始坐标空间大或者小。另外，通过指定x因子为负数，可以倒转x轴，同样可以指定y因子为负数来倒转y轴。通过调用CGContextScaleCTM函数来指定x, y缩放因子。图5-5显示了指定x因子为0.5，y因子为0.75后的缩放效果。代码如下：</p>
+
+<pre><code>CGContextScaleCTM (myContext, .5, .75);
+</code></pre>
+
+<p>Figure 5-5  A scaled image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/scaled_rooster.gif" alt="image" /></p>
+
+<p>联合变换将两个矩阵相乘来联接现价变换操作。我们可以联接多个矩阵来得到一个包含所有矩阵累积效果矩阵。通过调用CGContextConcatCTM来联接CTM和仿射矩阵。
+另外一种得到累积效果的方式是执行两个或多个变换操作而不恢复图形状态。图5-6显示了先平移后旋转一幅图片的效果，代码如下：</p>
+
+<pre><code>CGContextTranslateCTM (myContext, w,h);
+CGContextRotateCTM (myContext, radians(-180.));
+</code></pre>
+
+<p>Figure 5-6  An image that is translated and rotated</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tr_rooster.gif" alt="image" /></p>
+
+<p>图5-7显示了平移、缩放和旋转一幅图片，代码如下：</p>
+
+<pre><code>CGContextTranslateCTM (myContext, w/4, 0);
+CGContextScaleCTM (myContext, .25,  .5);
+CGContextRotateCTM (myContext, radians ( 22.));
+</code></pre>
+
+<p>Figure 5-7  An image that is translated, scaled, and then rotated</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/tsr_rooster.gif" alt="image" /></p>
+
+<p>变换操作的顺序会影响到最终的效果。如果调换顺序，将得到不同的结果。调换上面代码的顺序将得到如图5-8所示的效果，代码如下：</p>
+
+<pre><code>CGContextRotateCTM (myContext, radians ( 22.));
+CGContextScaleCTM (myContext, .25,  .5);
+CGContextTranslateCTM (myContext, w/4, 0);
+</code></pre>
+
+<p>Figure 5-8  An image that is rotated, scaled, and then translated</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rst_rooster.gif" alt="image" /></p>
+
+<h2>创建仿射变换</h2>
+
+<p>仿射变换操作在矩阵上，而不是在CTM上。我们可以使用这些函数来构造一个之后用于CTM(调用函数CGContextConcatCTM)的矩阵。仿射变换函数使用或者返回一个CGAffineTransform数据对象。我们可以构建简单或复杂的仿射变换。</p>
+
+<p>仿射变换函数能实现与CTM函数相同的操作&mdash;平移、旋转、缩放、联合。表5-1列出了仿射变换函数及其用途。注意每种变换都有两个函数。</p>
+
+<p>表5-1 仿射变换函数</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/hkufClsdxuBLYsVz20Qnbp7zDQIfQE6MOeYCjgzwCVc!/b/dPEupXMnLwAA&amp;bo=mgdqAQAAAAADB9Q!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>Quartz同样提供了一个仿射变换函数(CGAffineTransformInvert)来倒置矩阵。倒置操作通常用于在变换对象中提供点的倒置变换。当我们需要恢复一个被矩阵变换的值时，可以使用倒置操作。将值与倒置矩阵相乘，就可得到原先的值。我们通常不需要倒置操作，因为我们可以通过保存和恢复图形状态来倒置CTM的效果。</p>
+
+<p>在一些情况下，我们可能不需要变换整修空间，而只是一个点或一个大小。我们通过调用CGPointApplyAffineTransform在CGPoint结构上执行变换操作。调用CGSizeApplyAffineTransform在CGSize结构上执行变换操作。调用CGRectApplyAffineTransform在CGRect结构上执行变换操作。CGRectApplyAffineTransform返回一个最小的矩形，该矩形包含了被传递给CGRectApplyAffineTransform的矩形对象的角点。如果矩形上的仿射变换操作只有缩放和平移操作，则返回的矩形与四个变换后的角组成的矩形是一致的。</p>
+
+<p>可以通过调用函数CGAffineTransformMake来创建一个新的仿射变换，但与其它函数不同的是，它需要提供一个矩阵实体。</p>
+
+<h2>评价仿射变换</h2>
+
+<p>我们可以通过调用CGAffineTransformEqualToTransform函数来决定一个仿射变换是否与另一个相同。如果两个变换相同，则返回true；否则返回false。</p>
+
+<p>函数CGAffineTransformIsIdentity用于确认一个变换是否是单位变换。单位变换没有平移、缩放和旋转操作。Quartz常量CGAffineTransformIdentity表示一个单位变换。</p>
+
+<h2>获取用户空间到设备空间的变换</h2>
+
+<p>当使用Quartz 2D时，我们只是在用户空间下工作。Quartz为我们处理用户空间和设备空间的转换。如果我们的应用程序需要获取Quartz转换用户空间和设备空间的仿射变换，我们可以调用函数CGContextGetUserSpaceToDeviceSpaceTransform。</p>
+
+<p>Quartz提供了一系列的函数来转换用户空间和设备空间的几何体。我们会发现这些函数使用赶来比使用CGContextGetUserSpaceToDeviceSpaceTransform函数返回的仿射变换更好用。</p>
+
+<ol>
+<li>点：函数CGContextConvertPointToDeviceSpace和CGContextConvertPointToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
+<li>大小：函数CGContextConvertSizeToDeviceSpace和CGContextConvertSizeToUserSpace将一个CGSize数据结构从一个空间变换到另一个空间。</li>
+<li>矩形：函数CGContextConvertRectToDeviceSpace和CGContextConvertRectToUserSpace将一个CGPoint数据结构从一个空间变换到另一个空间。</li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/01/quartz-2dbian-cheng-zhi-nan-zhi-si-:yan-se-yu-yan-se-kong-jian/">Quartz 2D编程指南之四：颜色与颜色空间</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-01T22:59:58+08:00" pubdate data-updated="true">Dec 1<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/12/01/quartz-2dbian-cheng-zhi-nan-zhi-si-:yan-se-yu-yan-se-kong-jian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>不同的设备(显示器、打印机、扫描仪、摄像头)处理颜色的方式是不同的。每种设备都有其所能支持的颜色值范围。一种设备能支持的颜色可能在其它设备中无法支持。</p>
+
+<p>为了有效的使用颜色及理解Quartz 2D中用于颜色及颜色空间的函数，我们需要熟悉在Color Management Overview文档中所使用的术语。该文档中讨论了色觉、颜色值、设备依赖及设备颜色空间、颜色匹配问题、再现意图(rendering intent)、颜色管理模块和ColorSync。</p>
+
+<p>在本章中，我们将学习Quartz处理颜色和颜色空间，以及什么是alpha组件。本章同时也讨论如下问题：</p>
+
+<ol>
+<li>创建颜色空间</li>
+<li>创建和设置颜色</li>
+<li>设置再现意图</li>
+</ol>
+
+
+<h2>颜色与颜色空间</h2>
+
+<p>Quartz中的颜色是用一组值来表示。而颜色空间用于解析这些颜色信息。例如，表4-1列出了在全亮度下蓝色值在不同颜色空间下的值。如果不知道颜色空间及颜色空间所能接受的值，我们没有办法知道一组值所表示的颜色。</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/Fid_6/6_38018_75a129447ba58b3.png" alt="image" /></p>
+
+<p>如果我们使用了错误的颜色空间，我们可能会获得完全不同的颜色，如图4-1所示。</p>
+
+<p>Figure 4-1  Applying a BGR and an RGB color profile to the same image</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/color_profiles.gif" alt="image" /></p>
+
+<p>颜色空间可以有不同数量的组件。表4-1中的颜色空间中其中三个只有三个组件，而CMYK有四个组件。值的范围与颜色空间有关。对大部分颜色空间来说，颜色值范围为[0.0, 1.0]，1.0表示全亮度。例如，全亮度蓝色值在Quartz的RGB颜色空间中的值是(0, 0, 1.0)。在Quartz中，颜色值同样有一个alpha值来表示透明度。在表4-1中没有列出该值。</p>
+
+<h2>alpha值</h2>
+
+<p>alpha值是图形状态参数，Quartz用它来确定新的绘图对象如何与已存在的对象混合。在全强度下，新的绘图对象是不透明的。在0强度下，新的绘图对象是完全透明的。图4-2显示了5个大的方形，分别使用了alpha值为1.0, 0.75, 0.5, 0.1和0.0。随着大方形逐渐变得透明，底下的小的不透明的方形逐渐显现出来。</p>
+
+<p>Figure 4-2  A comparison of large rectangles painted using various alpha values</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/alpha_demo.gif" alt="image" /></p>
+
+<p>我们可以将两个对象绘制到page上，而page可以在渲染前通过设置全局的graphics context来设置自己的透明度。图4-3显示了将全局的透明度设置为0.5和1.0的效果。</p>
+
+<p>Figure 4-3  A comparison of global alpha values</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/set_alpha.gif" alt="image" /></p>
+
+<p>在标准混合模式(图形状态的默认模式)下，Quartz使用下面的公式来混合源颜色和目标颜色的组件：</p>
+
+<p><strong>destination = (alpha * source) + (1 &ndash; alpha) * destination</strong></p>
+
+<p>其中源颜色是新绘制的颜色，目标颜色是背景颜色。该公式可用于新绘制的形状和图像。</p>
+
+<p>对于对象透明度来说，alpha值为1.0时表示新对象是完全不透明的，值0.0表示新对象是完全透明的。0.0与1.0之间的值指定对象的透明度。我们可以为所有接受颜色的程序指定一个alpha值作为颜色值的最后一个组件。同样也可以使用CGContextSetAlpha函数来指定全局的alpha值。记住，如果同时设置以上两个值，Quartz将混合全局alpha值与对象的alpha值。</p>
+
+<p>为了让page完全透明，我们可以调用CGContextClearRect函数来清除图形上下文(graphics context)的alpha通道。例如，我们可以在给图标创建一个透明遮罩或者使窗口的背景透明时，采用这种方法。</p>
+
+<h2>创建颜色空间</h2>
+
+<p>Quartz支持颜色管理系统使用的标准颜色空间，也支持通用的颜色空间、索引颜色空间和模式(pattern)颜色空间。设备颜色空间以一种简便的方法在不同设备间表示颜色。它用于在两种不同设备间的本地颜色空间转换颜色数据。设备依赖颜色空间的颜色在不同设备上显示时效果是一样的，它扩展了设备的能力。基于此，设备依赖颜色空间是显示颜色时最好的选择。</p>
+
+<p>如果应用程序有精确的颜色表示需求，则应该总是使用设备依赖颜色空间。通用颜色空间(generic color space)是一种常用的设备依赖颜色空间。通用颜色空间通过操作系统为我们的应用程序提供最好的颜色空间。它能使在显示器上与在打印机上打印效果是一样的。</p>
+
+<p><em>重要：IOS不支持设备依赖颜色空间或通用颜色空间。IOS应用程序必须使用设备颜色空间(device color space)。</em></p>
+
+<h3>创建设备依赖颜色空间</h3>
+
+<p>为了创建设备依赖颜色空间，我们需要给Quartz提供白色参考点，黑色参考点及特殊设备的gamma值。Quartz使用这些信息将源颜色空间的颜色值转化为输出设备颜色空间的颜色值。</p>
+
+<p>Quartz支持设备依赖颜色空间，创建此空间的函数如下：</p>
+
+<ol>
+<li>L*a*b是非线性转换，它属于Munsell颜色符号系统(该系统使用色度、值、饱和度来指定颜色)。 L组件表示亮度值，a组件表示绿色与红色之间的值，b组件表示蓝色与黄色之间的值。该颜色空间设计用于模拟人脑解码颜色。使用函数CGColorSpaceCreateLab来创建。</li>
+<li>ICC颜色空间是由ICC(由国际色彩聪明，International Color Consortium)颜色配置而来的。ICC颜色配置了设备支持的颜色域，该颜色域与其它设备属性相符，所以该信息可被用于将一个设备的颜色空间精确地转换为另一个设备的颜色空间。大多数设备制造商都支持ICC配置。一些彩色显示器和打印机都内嵌了ICC信息，用于处理诸如TIFF的位图格式。使用函数CGColorSpaceCreateICCBased来创建。</li>
+<li>标准化RGB是设备依赖的RGB颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedRGB来创建。</li>
+<li>标准化灰度是设备依赖的灰度颜色空间，它表示相对于白色参考点(设备可生成的最白的颜色)的颜色。 使用函数CGColorSpaceCreateCalibratedGray来创建。</li>
+</ol>
+
+
+<h3>创建通用颜色空间</h3>
+
+<p>通用颜色空间的颜色与系统匹配。大部分情况下，结果是可接受的。就像名字所暗示的那样，每个“通用”颜色空间(generic gray, generic RGB, generic CMYK)都是一个指定的设备依赖颜色空间。</p>
+
+<p>通过颜色空间非常容易使用；我们不需要提供任何参考点信息。我们使用函数CGColorSpaceCreateWithName来创建一个通用颜色空间，该函数可传入以下常量值：</p>
+
+<ol>
+<li>kCGColorSpaceGenericGray：指定通用灰度颜色空间，该颜色空间是单色的，可以指定从0.0(纯黑)到1.0(纯白)范围内的颜色值。</li>
+<li>kCGColorSpaceGenericRGB：指定通用RGB颜色空间，该颜色空间中的颜色值由三个组件(red, green, blue)组成，主要用于彩色显示器上的像素。RGB颜色空间中的每个组件的值范围是[0.0, 1.0]。</li>
+<li>kCGColorSpaceGenericCMYK：指定通用CMYK颜色空间，该颜色空间的颜色值由四个组件(cyan, magenta, yellow, black)，主要用于打印机。CMYK颜色空间的每个组件的值范围是[0.0, 1.0]。</li>
+</ol>
+
+
+<h3>创建设备颜色空间</h3>
+
+<p>设备颜色空间主要用于IOS应用程序，因为其它颜色空间无法在IOS上使用。大多数情况下，Mac OS X应用程序应使用通用颜色空间，而不使用设备颜色空间。但是有些Quartz程序希望图像使用设备颜色空间。例如，如果调用<strong>CGImageCreateWithMask</strong>函数来指定一个图像作为遮罩，图像必须在设备的灰度颜色空间(device gray color space)中定义。</p>
+
+<p>我们可以使用以下函数来创建设备颜色空间：</p>
+
+<ol>
+<li>CGColorSpaceCreateDeviceGray：创建设备依赖灰度颜色空间</li>
+<li>CGColorSpaceCreateDeviceRGB：创建设备依赖RGB颜色空间</li>
+<li>CGColorSpaceCreateDeviceCMYK：创建设备依赖CMYK颜色空间</li>
+</ol>
+
+
+<h3>创建索引颜色空间和模式颜色空间</h3>
+
+<p>索引颜色空间包含一个有256个词目的颜色表，和词目映射到基础颜色空间。颜色表中每个词目指定一个基础颜色空间中的颜色值。使用CGColorSpaceCreateIndexed函数来创建。</p>
+
+<p>模式颜色空间在绘制模式时使用。 使用CGColorSpaceCreatePattern函数来创建。</p>
+
+<h2>设置和创建颜色</h2>
+
+<p>Quartz提供了一套函数用于设置填充颜色、线框颜色、颜色空间和alpha值。每个颜色参数都是图形状态参数，这就意味着一旦设置了，设置将被保存并影响后续操作，直到被修改为止。</p>
+
+<p>一个颜色必须有相关联的颜色空间。否则，Quartz不知道如何解析颜色值。进一步说，说是我们必须为绘制目标提供一个合适的颜色空间。如图4-4所示，左边是CMYK颜色空间中的蓝色填充色，右边是RGB颜色空间中的蓝色填充色。这两个颜色值在理论上是一样的，但只有在相同颜色空间下的相同颜色值显示出来才是一样的。</p>
+
+<p>Figure 4-4  A CMYK fill color and an RGB fill color</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cmyk_fill.gif" alt="image" /></p>
+
+<p>我们可以使用CGContextSetFillColorSpace和CGContextSetStrokeColorSpace函数来设置填充和线框颜色空间，或者可以使用以下便利函数来设置设备颜色空间的颜色值。</p>
+
+<p><img src="http://a3.qpic.cn/psb?/V130i6W71atwfr/Eb**8Z65rRfBnR43uGU9nZk6w3CxXIq8wO9S8nqWi48!/b/dPZwcHVZBAAA&amp;bo=dgRyAQAAAAADACQ!&amp;rf=viewer_4" alt="image" /></p>
+
+<p>我们在填充及线框颜色空间中指定填充及线框颜色值。例如，在RGB颜色空间中，我们使用数组(1.0, 0.0, 0.0, 1.0)来表示红色。前三个值指定红色值为全强度，而绿色和蓝色为零强度。第四个值为alpha值，用于指定颜色的透明度。</p>
+
+<p>如果需要在程序中重复使用颜色，最有效的方法是通过设置填充色和线框色来创建一个CGColor对象，然后将该对象传递给函数<strong>CGContextSetFillColorWithColor</strong>及<em>CGContextSetStrokeColorWithColor</em>。我们可以按需要保持CGColor对象，并可以直接使用该对象来改进应用程序的显示。</p>
+
+<p>我们可以调用CGColorCreate函数来创建CGColor对象，该函数需要两个参数：CGColorspace对象及颜色值数组。数组的最后一个值指定alpha值。</p>
+
+<h2>设置再现意图(Rending Intent)</h2>
+
+<p>“再现意图”用于指定如何将源颜色空间的颜色映射到图形上下文的目标颜色空间的颜色范围内。如果不显示指定再现意图，Quartz使用相对色度再现意图(relative colorimetric rendering intent)应用于所有绘制(不包含位图图像)。对于位图图像，Quartz默认使用感知(perceptual)再现意图。</p>
+
+<p>我们可以调用CGContextSetRenderingIntent函数来设置再现意图，并传递图形上下文(graphics context)及下例常量作为参数：</p>
+
+<ol>
+<li>kCGRenderingIntentDefault：使用默认的渲染意图。</li>
+<li>kCGRenderingIntentAbsoluteColorimetric：绝对色度渲染意图。将输出设备颜色域外的颜色映射为输出设备域内与之最接近的颜色。这可以产生一个裁减效果，因为色域外的两个不同的颜色值可能被映射为色域内的同一个颜色值。当图形使用的颜色值同时包含在源色域及目标色域内时，这种方法是最好的。常用于logo或者使用专色(spot color)时。</li>
+<li>kCGRenderingIntentRelativeColorimetric：相对色度渲染意图。转换所有的颜色(包括色域内的)，以补偿图形上下文的白点与输出设备白点之间的色差。kCGRenderingIntentPerceptual：感知渲染意图。通过压缩图形上下文的色域来适应输出设备的色域，并保持源颜色空间的颜色之间的相对性。感知渲染意图适用于相片及其它复杂的高细度图片。</li>
+<li>kCGRenderingIntentSaturation：饱和度渲染意图。把颜色转换到输出设备色域内时，保持颜色的相对饱和度。结果是包含亮度、饱和度颜色的图片。饱和度意图适用于生成低细度的图片，如描述性图表。</li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/">Quartz 2D编程指南之三：路径(Path)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-16T21:44:15+08:00" pubdate data-updated="true">Nov 16<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/16/quartz-2dbian-cheng-zhi-nan-zhi-san-:lu-jing-path/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><strong>路径</strong>定义了一个或多个形状，或是子路径。一个子路径可由直线，曲线，或者同时由两者构成。它可以是开放的，也可以是闭合的。一个子路径可以是简单的形状，如线、圆、矩形、星形；也可以是复杂的形状，如山脉的轮廓或者是涂鸦。图3-1显示了一些我们可以创建的路径。左上角的直线可以是虚线；直线也可以是实线。上边中间的路径是由多条曲线组成的开放路径。右上角的同心圆填充了颜色，但没有描边。左下角的加利福尼亚州是闭合路径，由许多曲线和直线构成，且对路径进行填充和描边。两个星形阐明了填充路径的两种方式，我们将在本章详细描述。</p>
+
+<p>Figure 3-1  Quartz supports path-based drawing</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/path_vector_examples.gif" alt="image" /></p>
+
+<p>在本章中，我们将学习如何构建路径，如何对路径进行填充和描边，及影响路径表现形式的参数。</p>
+
+<h2>创建及绘制路径</h2>
+
+<p>路径创建及路径绘制是两个独立的工作。首先我们创建路径。当我们需要渲染路径时，我们需要使用Quartz来绘制它。正如图3-1中所示，我们可以选择对路径进行描边，填充路径，或同时进行这两种操作。我们同样可以将其它对象绘制到路径所表示的范围内，即对对象进行裁减。</p>
+
+<p>图3-2绘制了一个路径，该路径包含两个子路径。左边的子路径是一个矩形，右边的子路径是由直线和曲线组成的抽象形状。两个子路径都进行了填充及描边。</p>
+
+<p>Figure 3-2  A path that contains two shapes, or subpaths</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/subpaths.gif" alt="image" /></p>
+
+<p>图3-3显示了多条独立绘制的路径。每个路径饮食随机生成的曲线，一些进行填充，另一些进行了描边。这些路径都包含在一个圆形裁减区域内。</p>
+
+<p>Figure 3-3  A clipping area constrains drawing</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circle_clipping.gif" alt="image" /></p>
+
+<h2>构建块(Building Block)</h2>
+
+<p>子路径是由直线、弧和曲线构成的。Quartz同样也提供了简便的函数用于添加矩形或椭圆等形状。点也是路径最基本的构建块，因为点定义了形状的起始点与终止点。</p>
+
+<h3>点</h3>
+
+<p>点由x, y坐标值定义，用于在用户空间指定 一个位置。我们可以调用函数CGContextMoveToPoint来为新的子路径指定起始点。Quartz跟踪当前点，用于记录路径构建过程中最新的位置。例如，如果调用函数CGContextMoveToPoint并设置位置为(10, 10)，即将当前点移动到位置(10, 10)。如果在水平位置绘制50个单位长度的直线，则直线的终点为(60, 10)，该点变成当前点。直线、弧和曲线总是从当前点开始绘制。</p>
+
+<p>通常我们通过传递(x, y)值给Quartz函数来指定一个点。一些函数需要我们传递一个CGPoint数据结构，该结构包含两个浮点值。</p>
+
+<h3>直线</h3>
+
+<p>直线由两个端点定义。起始点通常是当前点，所以创建直线时，我们只需要指定终止点。我们使用函数CGContextAddLineToPoint来添加一条直线到子路径中。</p>
+
+<p>我们可以调用CGContextAddLines函数添加一系列相关的直线到子路径中。我们传递一个点数组给这个函数。第一个点必须是第一条直线的起始点；剩下的点是端点。Quartz从第一个点开始绘制一个新子路径，然后每两个相邻点连接成一条线段。</p>
+
+<h3>弧</h3>
+
+<p>弧是圆弧段。Quartz提供了两个函数来创建弧。函数CGContextAddArc从圆中来创建一个曲线段。我们指定一个圆心，半径和放射角(以弧度为单位)。放射角为2 PI时，创建的是一个圆。图3-4显示了多个独立的路径。每个路径饮食一个自动生成的圆；一些是填充的，另一些是描边的。</p>
+
+<p>Figure 3-4  Multiple paths; each path contains a randomly generated circle</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/circles.gif" alt="image" /></p>
+
+<p>函数CGContextAddArcToPoint用于为矩形创建内切弧的场景。Quartz使用我们提供的端点创建两条正切线。同样我们需要提供圆的半径。弧心是两条半径的交叉点，每条半径都与相应的正切线垂直。弧的两个端点是正切线的正切点，如图3-5所示。红色的部分是实际绘制的部分。</p>
+
+<p>Figure 3-5  Defining an arc with two tangent lines and a radius</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rounded_corner.gif" alt="image" /></p>
+
+<p>如果当前路径已经包含了一个子路径，Quartz将追加一条从当前点到弧的起始点的直线段。如果当前路径为空，Quartz将创建一个新的子路径，该子路径从弧的起始点开始，而不添加初始的直线段。</p>
+
+<h3>曲线</h3>
+
+<p>二次与三次Bezier曲线是代数曲线，可以指定任意的曲线形状。曲线上的点通过一个应用于起始、终点及一个或多个控制点的多项式计算得出。这种方式定义的形状是向量图的基础。这个公式比将位数组更容易存储，并且曲线可以在任何分辨下重新创建。</p>
+
+<p>图3-6显示了一些路径的曲线。每条路径包含一条随机生成的曲线；一些是填充的，另一些是描边的。</p>
+
+<p>Figure 3-6  Multiple paths; each path contains a randomly generated curve</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/bezier_paths.gif" alt="image" /></p>
+
+<p>我们使用函数CGContextAddCurveToPoint将Bezier曲线连接到当前点，并传递控制点和端点作为参数，如图3-7所示。两个控制点的位置决定了曲线的形状。如果两个控制点都在两个端点上面，则曲线向上凸起。如果两个控制点都在两个端点下面，则曲线向下凹。如果第二个控制点比第一个控制点离得当前点近，则曲线自交叉，创建了一个回路。</p>
+
+<p>Figure 3-7  A cubic Bézier curve uses two control points</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cubic_bezier_curve.gif" alt="image" /></p>
+
+<p>我们也可以调用函数CGContextAddQuadCurveToPoint来创建Bezier，并传递端点及一个控制点，如图3-8所示。控制点决定了曲线弯曲的方向。由于只使用一个控制点，所以无法创建出如三次Bezier曲线一样多的曲线。例如我们无法创建出交叉的曲线。</p>
+
+<p>Figure 3-8  A quadratic Bézier curve uses one control point</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/quadratic_bezier_curve.gif" alt="image" /></p>
+
+<h3>闭合路径</h3>
+
+<p>我们可以调用函数CGContextClosePath来闭合曲线。该函数用一条直接来连接当前点与起始点，以使路径闭合。起始与终点重合的直线、弧和曲线并不自动闭合路径，我们必须调用CGContextClosePath来闭合路径。</p>
+
+<p>Quartz的一些函数将路径的子路径看成是闭合的。这些函数显示地添加一条直线来闭合 子路径，如同调用了CGContextClosePath函数。</p>
+
+<p>在闭合一条子路径后，如果程序再添加直线、弧或曲线到路径，Quartz将在闭合的子路径的起点开始创建一个子路径。</p>
+
+<h3>椭圆</h3>
+
+<p>椭圆是一种特殊的圆。椭圆是通过定义两个焦点，在平面内所有与这两个焦点的距离之和相等的点所构成的图形。图3-9显示了一些独立的路径。每个路径都包含一个随机生成的椭圆；一些进行了填充，另一边进行了描边。</p>
+
+<p>Figure 3-9  Multiple paths; each path contains a randomly generated ellipse</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/ellipses.gif" alt="image" /></p>
+
+<p>我们可以调用CGContextAddEllipseInRect函数来添加一个椭圆到当前路径。我们提供一个矩形来定义一个椭圆。Quartz利用一系列的Bezier曲线来模拟椭圆。椭圆的中心就是矩形的中心。如果矩形的宽与高相等，则椭圆变成了圆，且圆的半径为矩形宽度的一半。如果矩形的宽与高不相等，则定义了椭圆的长轴与短轴。</p>
+
+<p>添加到路径中的椭圆开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+
+<h3>矩形</h3>
+
+<p>我们可以调用CGContextAddRect来添加一个矩形到当前路径中，并提供一个CGRect结构体(包含矩形的原点及大小)作为参数。</p>
+
+<p>添加到路径的矩形开始于一个move-to操作，结束于一个close-subpath操作，所有的移动方向都是顺时针。</p>
+
+<p>我们也可能调用CGContextAddRects函数来添加一系列的矩形到当前路径，并传递一个CGRect结构体的数组。图3-10显示了一些独立的路径。每个路径包含一个随机生成的矩形；一些进行了填充，另一边进行了描边。</p>
+
+<p>Figure 3-10  Multiple paths; each path contains a randomly generated rectangle</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/rectangles.gif" alt="image" /></p>
+
+<h2>创建路径</h2>
+
+<p>当我们需要在一个图形上下文中构建一个路径时，我们需要调用CGContextBeginPath来标记Quartz。然后，我们调用函数CGContextMovePoint来设置每一个图形或子路径的起始点。在构建起始点后，我们可以添加直线、弧、曲线。记住如下规则：</p>
+
+<ol>
+<li>在开始绘制路径前，调用函数CGContextBeginPath；</li>
+<li>直线、弧、曲线开始于当前点。空路径没有当前点；我们必须调用CGContextMoveToPoint来设置第一个子路径的起始点，或者调用一个便利函数来隐式地完成该任务。</li>
+<li>如果要闭合当前子路径，调用函数CGContextClosePath。随后路径将开始一个新的子路径，即使我们不显示设置一个新的起始点。</li>
+<li>当绘制弧时，Quartz将在当前点与弧的起始点间绘制一条直线。</li>
+<li>添加椭圆和矩形的Quartz程序将在路径中添加新的闭合子路径。</li>
+<li>我们必须调用绘制函数来填充或者描边一条路径，因为创建路径时并不会绘制路径。</li>
+</ol>
+
+
+<p>在绘制路径后，将清空图形上下文。我们也许想保留路径，特别是在绘制复杂场景时，我们需要反复使用。基于此，Quartz提供了两个数据类型来创建可复用路径—CGPathRef和CGMutablePathRef。我们可以调用函数CGPathCreateMutable来创建可变的CGPath对象，并可向该对象添加直线、弧、曲线和矩形。Quartz提供了一个类似于操作图形上下文的CGPath的函数集合。这些路径函数操作CGPath对象，而不是图形上下文。这些函数包括：</p>
+
+<ol>
+<li>CGPathCreateMutable，取代CGContextBeginPath</li>
+<li>CGPathMoveToPoint，取代CGContextMoveToPoint</li>
+<li>CGPathAddLineToPoint，取代CGContexAddLineToPoint</li>
+<li>CGPathAddCurveToPoint，取代CGContexAddCurveToPoint</li>
+<li>CGPathAddEllipseInRect，取代CGContexAddEllipseInRect</li>
+<li>CGPathAddArc，取代CGContexAddArc</li>
+<li>CGPathAddRect，取代CGContexAddRect</li>
+<li>CGPathCloseSubpath，取代CGContexClosePath</li>
+</ol>
+
+
+<p>如果想要添加一个路径到图形上下文，可以调用CGContextAddPath。路径将保留在图形上下文中，直到Quartz绘制它。我们可以调用CGContextAddPath再次添加路径。</p>
+
+<h2>绘制路径</h2>
+
+<p>我们可以绘制填充或描边的路径。描边(Stroke)是绘制路径的边框。填充是绘制路径包含的区域。Quartz提供了函数来填充或描边路径。描边线的属性(宽度、颜色等)，填充色及Quartz用于计算填充区域的方法都是图形状态的一部分。</p>
+
+<h3>影响描边的属性</h3>
+
+<p>我们可以使用表3-1中的属性来决定如何对路径进行描边操作。这边属性是图形上下文的一部分，这意味着我们设置的值将会影响到后续的描边操作，直到我们个性这些值。</p>
+
+<p>Table 3-1  Parameters that affect how Quartz strokes the current path</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_fa8395db5f33397.png" alt="image" /></p>
+
+<p>linewidth是线的总宽度，单位是用户空间单元。</p>
+
+<p>linejoin属性指定如何绘制线段间的联接点。Quartz支持表3-2中描述的联接样式。</p>
+
+<p>Table 3-2  Line join styles</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_7e06943cde66626.png" alt="image" /></p>
+
+<p>linecap指定如何绘制直线的端点。Quartz支持表3-3所示的线帽类型。默认的是butt cap。</p>
+
+<p>Table 3-3  Line cap styles</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_a0b926ec7469e04.png" alt="image" /></p>
+
+<p>闭合路径将起始点看作是一个联接点；起始点同样也使用选定的直线连接方法进行渲染。如果通过添加一条连接到起始点的直线来闭合路径，则路径的两个端点都使用选定的线帽类型来绘制。</p>
+
+<p>Linedash pattern(虚线模式)允许我们沿着描边绘制虚线。我们通过在CGContextSetLineDash结构体中指定虚线数组和虚线相位来控制虚线的大小及位置。</p>
+
+<p>CGContextSetLineDash结构如下：</p>
+
+<pre><code>void CGContextSetLineDash (
+    CGContextRef ctx,
+    float phase,
+    const float lengths[],
+    size_t count,
+);
+</code></pre>
+
+<p>其中lengths属性指定了虚线段的长度，该值是在绘制片断与未绘制片断之间交替。phase属性指定虚线模式的起始点。图3-11显示了虚线模式：</p>
+
+<p>Figure 3-11  Examples of line dash patterns</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/linedash.gif" alt="image" /></p>
+
+<p>描边颜色空间(stroke color space)定义了Quartz如何解析描边的颜色。我们同样也可以指定一个封装了颜色和颜色空间的CGColorRef数据类型。</p>
+
+<h3>路径描边的函数</h3>
+
+<p>Quartz提供了表3-4中的函数来描边当前路径。其中一些是描边矩形及椭圆的便捷函数。</p>
+
+<p>Table 3-4  Functions that stroke paths</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_2f7e77438d8d49c.png" alt="image" /></p>
+
+<p>函数CGContextStrokeLineSegments等同于如下代码</p>
+
+<pre><code>CGContextBeginPath(context);                                                                                                                                                                                                                                                                 
+for(k = 0; k &lt; count; k += 2)
+{
+    CGContextMoveToPoint(context,s[k].x, s[k].y); CGContextAddLineToPoint(context,s[k+1].x, s[k+1].y);
+}
+
+CGContextStrokePath(context);
+</code></pre>
+
+<p>当我们调用CGContextStrokeLineSegments时，我们通过点数组来指定线段，并组织成点对的形式。每一对是由线段的起始点与终止点组成。例如，数组的第一个点指定了第一条直线的起始点，第二个点是第一条直线的终点，第三个点是第二条直线的起始点，依此类推。</p>
+
+<h3>填充路径</h3>
+
+<p>当我们填充当前路径时，Quartz将路径包含的每个子路径都看作是闭合的。然后，使用这些闭合路径并计算填充的像素。 Quartz有两种方式来计算填充区域。椭圆和矩形这样的路径其区域都很明显。但是如果路径是由几个重叠的部分组成或者路径包含多个子路径(如图3-12所示)，我们则有两种规则来定义填充区域。</p>
+
+<p>默认的规则是非零缠绕数规则(nonzero windingnumber rule)。为了确定一个点是否需要绘制，我们从该点开始绘制一条直线穿过绘图的边界。从0开始计数，每次路径片断从左到右穿过直线是，计数加1；而从右到左穿过直线时，计数减1。如果结果为0，则不绘制该点，否则绘制。路径片断绘制的方向会影响到结果。图3-13显示了使用非缠绕数规则对内圆和外圆进行填充的结果。当两个圆绘制方向相同时，两个圆都被填充。如果方向相反，则内圆不填充。</p>
+
+<p>我们也可以使用偶数-奇数规则。为了确定一个点是否被绘制，我们从该点开始绘制一条直线穿过绘图的边界。计算穿过该直线的路径片断的数目。如果是奇数，则绘制该点，如果是偶数，则不绘制该点。路径片断绘制的方向不影响结果。如图3-12所示，无论两个圆的绘制方向是什么，填充结果都是一样的。</p>
+
+<p>Figure 3-12  Concentric circles filled using different fill rules</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/eosampleone.gif" alt="image" /></p>
+
+<p>Quartz提供了表3-5中的函数来填充当前路径。其中一些是填充矩形及椭圆的便捷函数。</p>
+
+<p>Table 3-5  Functions that fill paths</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_b20e82e060e2e61.png" alt="image" /></p>
+
+<h3>设置混合模式</h3>
+
+<p>混合模式指定了Quartz如何将绘图绘制到背景上。Quartz默认使用普通混合模式(normal blend mode)，该模式使用如下公式来计算前景绘图与背景绘图如何混合：</p>
+
+<pre><code>result = (alpha * foreground) + (1 - alpha) *background
+</code></pre>
+
+<p>“颜色与颜色空间”章节里面详细讨论了颜色值的alpha组件，该组件用于指定颜色的透明度。在本章的例子中，我们可以假设颜色值是完全不透明的(alpha = 0)。对于不透明的颜色值，当我们用普通混合模式时，所有绘制于背景之上的绘图都会遮掩住背景。</p>
+
+<p>我们可以调用函数CGContextSetBlendMode并传递适当的混合模式常量值来设置混合模式来达到我们想到的效果。记住混合模式是图形状态的一部分。如果调用了函数CGContextSaveGState来改变混合模式，则调用函数CGContextRestoreGState来重新设置混合模式为普通混合模式。</p>
+
+<p>接下来的内容例举了不同混合模式上将图3-13的矩形绘制到图3-14的矩形之上的效果。背景图使用普通混合模式来绘制。然后调用CGContextSetBlendMode函数来改变混合模式。最后绘制前景矩形。</p>
+
+<p>Figure 3-13  The rectangles painted in the foreground</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/vertical.gif" alt="image" /></p>
+
+<p>Figure 3-14  The rectangles painted in the background</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/horizontal.gif" alt="image" /></p>
+
+<p>注意：我们同样可以使用混合来组合两张图片或将图片与图形上下文中已有的内容进行混合。</p>
+
+<h4>普通混合模式</h4>
+
+<p>由于普通混合模式是默认的混合模式，所以在设置了其它混合模式后，可以调用CGContextSetBlendMode并传递kCGBlendModeNormal来将混合模式重设为默认。图3-15显示了普通混合模式上图3-13与图3-14混合的效果。</p>
+
+<p>Figure 3-15  Rectangles painted using normal blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_normal.gif" alt="image" /></p>
+
+<h4>正片叠底混合模式(Mutiply Blend Mode)</h4>
+
+<p>正片叠底混合模式指定将前景的图片采样与背景图片采样相乘。结果颜色至少与两个采样颜色之一一样暗。图3-16显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeMultiply来设置这种混合模式。</p>
+
+<p>Figure 3-16  Rectangles painted using multiply blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_multiply.gif" alt="image" /></p>
+
+<h4>屏幕混合模式(Screen Blend Mode)</h4>
+
+<p>屏幕混合模式指定将前景图片采样的反转色与背景图片的反转色相乘。结果颜色至少与两种采样颜色之一一样亮。图3-17显示了混合结果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeScreen来设置这种混合模式。</p>
+
+<p>Figure 3-17  Rectangles painted using screen blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_screen.gif" alt="image" /></p>
+
+<h4>叠加混合模式(Overlay Blend Mode)</h4>
+
+<p>叠加混合模式是将前景图片与背景图片或者正片叠底，或者屏幕化，这取决于背景颜色。背景颜色值与前景颜色值以反映出背景颜色的亮度与暗度。图3-18显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeOverlay来设置这种混合模式。</p>
+
+<p>Figure 3-18  Rectangles painted using overlay blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_overlay.gif" alt="image" /></p>
+
+<h4>暗化混合模式(Darken Blend Mode)</h4>
+
+<p>通过选择前景图片与背景图片更暗的采样来混合图片采样。背景图片采样被前景图片采样更暗的部分取代，而其它部分不变。图3-19显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDarken来设置这种混合模式。</p>
+
+<p>Figure 3-19  Rectangles painted using darken blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_darken.gif" alt="image" /></p>
+
+<h4>亮化混合模式(Lighten Blend Mode)</h4>
+
+<p>通过选择前景图片与背景图片更亮的采样来混合图片采样。背景图片采样被前景图片采样更亮的部分取代，而其它部分不变。图3-20显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLighten来设置这种混合模式。</p>
+
+<p>Figure 3-20  Rectangles painted using lighten blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_lighten.gif" alt="image" /></p>
+
+<h4>色彩减淡模式(ColorDodge Blend Mode)</h4>
+
+<p>加亮背景图片采样以反映出前景图片采样。被指定为黑色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorDodge来设置这种混合模式。</p>
+
+<p>Figure 3-21  Rectangles painted using color dodge blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_dodge.gif" alt="image" /></p>
+
+<h4>色彩加深模式(ColorBurn Blend Mode)</h4>
+
+<p>加深背景图片采样以反映出前景图片采样。被指定为白色的前景图片采样值将不产生变化。图3-21显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColorBurn来设置这种混合模式。</p>
+
+<p>Figure 3-22  Rectangles painted using color burn blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color_burn.gif" alt="image" /></p>
+
+<h4>柔光混合模式(SoftLight Blend Mode)</h4>
+
+<p>根据前景采样颜色减淡或加深颜色值。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于Dodge模式。如果前景采样颜色比50%灰度值更暗，则加强背景，类似于Burn模式。纯黑或纯白的图片采样将产生更暗或更亮的区域。但是但是不产生纯白或纯黑的颜色。该效果类似于将一个漫射光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-23显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSoftLight来设置这种混合模式。</p>
+
+<p>Figure 3-23  Rectangles painted using soft light blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_soft_light.gif" alt="image" /></p>
+
+<h4>强光混合模式(Hard Light Blend Mode)</h4>
+
+<p>根据前景图片采样颜色正片叠加或屏幕化颜色。如果前景采样颜色比50%灰度值更亮，则减淡背景，类似于screen模式。如果前景采样颜色比50%灰度值更暗，则加深背景，类似于multiply模式。如果前景采样颜色等于50%灰度，则前景颜色不变。纯黑与纯白的颜色图片采样将产生纯黑或纯白的颜色值。该效果类似于将一个强光源放于一个前景图前。该效果用于在场景中添加高光效果。图3-24显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHardLight来设置这种混合模式。</p>
+
+<p>Figure 3-24  Rectangles painted using hard light blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hard_light.gif" alt="image" /></p>
+
+<h4>差值混合模式(Difference Blend Mode)</h4>
+
+<p>将前景图片采样颜色值与背景图片采样值相减，相减的前后关系取决于哪个采样的亮度值更大。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-25显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeDifference来设置这种混合模式。</p>
+
+<p>Figure 3-25  Rectangles painted using difference blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_difference.gif" alt="image" /></p>
+
+<h4>排除混合模式(Exclusion Blend Mode)</h4>
+
+<p>该效果类似于Difference效果，只是对比度更低。黑色的前景采样值不发生变化；白色值转化为背景的值。图3-26显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeExclusion来设置这种混合模式。</p>
+
+<p>Figure 3-26  Rectangles painted using exclusion blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_exclusion.gif" alt="image" /></p>
+
+<h4>色相混合模式(Hue Blend Mode)</h4>
+
+<p>使用背景的亮度和饱和度与前景的色相混合。图3-27显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeHue来设置这种混合模式。</p>
+
+<p>Figure 3-27  Rectangles painted using hue blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_hue.gif" alt="image" /></p>
+
+<h4>饱和度混合模式(Saturation Blend Mode)</h4>
+
+<p>混合背景的亮度和色相前景的饱和度。背景中没有饱和度的区域不发生变化。图3-28显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeSaturation来设置这种混合模式。</p>
+
+<p>Figure 3-28  Rectangles painted using saturation blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_saturation.gif" alt="image" /></p>
+
+<h4>颜色混合模式(Color Blend Mode)</h4>
+
+<p>混合背景的亮度值与前景的色相与饱和度。该模式保留图片的灰度级。我们可以使用该模式绘制单色图片或彩色图片。图3-29显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeColor来设置这种混合模式。</p>
+
+<p>Figure 3-29  Rectangles painted using color blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_color.gif" alt="image" /></p>
+
+<h4>亮度混合模式(Luminosity Blend Mode)</h4>
+
+<p>将背景图片的色相、饱和度与背景图片的亮度相混合。该模块产生一个与Color Blend模式相反的效果。图3-30显示了混合效果。我们可以调用CGContextSetBlendMode并传递kCGBlendModeLuminosity来设置这种混合模式。</p>
+
+<p>Figure 3-30  Rectangles painted using luminosity blend mode</p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/blm_luminosity.gif" alt="image" /></p>
+
+<h2>裁剪路径</h2>
+
+<p>当前裁剪区域是从路径中创建，作为一个遮罩，从而允许遮住我们不想绘制的部分。例如，我们有一个很大的图片，但只需要显示其中一小部分，则可以设置裁减区域来显示我们想显示的部分。</p>
+
+<p>当我们绘制的时候，Quartz只渲染裁剪区域里面的东西。裁剪区域内的闭合路径是可见的；而在区域外的部分是不可见的。</p>
+
+<p>当图形上下文初始创建时，裁减区域包含上下文所有的可绘制区域(例如，PDF上下文的media box)。我们可以通过设置当前路径来改变裁剪区域，然后使用裁减函数来取代绘制函数。裁剪函数与当前已有的裁剪区域求交集以获得路径的填充区域。因此，我们可以求交取得裁减区域，缩小图片的可视区域，但是不能扩展裁减区域。</p>
+
+<p>裁减区域是图形状态的一部分。为了恢复先前的裁减区域，我们可以在裁减前保存图形状态，并在裁减绘制后恢复图形状态。</p>
+
+<p>代码清单3-1显示了绘制圆形后设置裁减区域。该段代码使得绘图被裁减，效果类似于图3-3所示。</p>
+
+<p>Listing 3-1 Setting up a circular clip area</p>
+
+<pre><code>CGContextBeginPath(context);
+CGContextAddArc(context, w/2, h/2, ((w&gt;h) ? h : w)/2, 0, 2*PI, 0);
+CGContextClosePath(context);
+CGContextClip(context);
+</code></pre>
+
+<p>Table 3-6  Functions that clip the graphics context</p>
+
+<p><img src="http://cc.cocimg.com/bbs/attachment/thumb/Fid_6/6_38018_9138e0a8166cd38.png" alt="image" /></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/">Quartz 2D编程指南之二：图形上下文(Graphics Contexts)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-11T23:14:44+08:00" pubdate data-updated="true">Nov 11<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/11/11/quartz-2dbian-cheng-zhi-nan-zhi-er-:tu-xing-shang-xia-wen-graphics-contexts/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>一个Graphics Context表示一个绘制目标。它包含绘制系统用于完成绘制指令的绘制参数和设备相关信息。Graphics Context定义了基本的绘制属性，如颜色、裁减区域、线条宽度和样式信息、字体信息、混合模式等。</p>
+
+<p>我们可以通过几种方式来获取Graphics Context：Quartz提供的创建函数、Mac OS X框架或IOS的UIKit框架提供的函数。Quartz提供了多种Graphics Context的创建函数，包括bitmap和PDF，我们可以使用这些Graphics Context创建自定义的内容。</p>
+
+<p>本章介绍了如何为不同的绘制目标创建Graphics Context。在代码中，我们用CGContextRef来表示一个Graphics Context。当获得一个Graphics Context后，可以使用Quartz 2D函数在上下文(context)中进行绘制、完成操作(如平移)、修改图形状态参数(如线宽和填充颜色)等。</p>
+
+<h2>在iOS中的视图Graphics Context进行绘制</h2>
+
+<p>在iOS应用程序中，如果要在屏幕上进行绘制，需要创建一个UIView对象，并实现它的drawRect:方法。视图的drawRect:方法在视图显示在屏幕上及它的内容需要更新时被调用。在调用自定义的drawRect:后，视图对象自动配置绘图环境以便代码能立即执行绘图操作。作为配置的一部分，视图对象将为当前的绘图环境创建一个Graphics Context。我们可以通过调用UIGraphicsGetCurrentContext函数来获取这个Graphics Context。</p>
+
+<p>UIKit默认的坐标系统与Quartz不同。在UIKit中，原点位于左上角，y轴正方向为向下。UIView通过将修改Quartz的Graphics Context的CTM[原点平移到左下角，同时将y轴反转(y值乘以-1)]以使其与UIView匹配。</p>
+
+<h2>在Mac OS X中创建一个窗口Graphics Context</h2>
+
+<p>在Mac OS X中绘制时，我们需要创建一个窗口Graphics Context。Quartz 2D API 没有提供函数来获取窗口Graphics Context。取而代之的是用Cocoa框架来获取一个窗口上下文。</p>
+
+<p>我们可以在Cocoa应用程序的drawRect:中获取一个Quartz Graphics Context，如下代码所示：</p>
+
+<pre><code>CGContextRef myContext = [[NSGraphicsContext currentContext] graphicsPort];
+</code></pre>
+
+<p>currentContext方法在当前线程中返回NSGraphicsContext实例。graphicsPort方法返回一个低级别、平台相关的Graphics Context(Quartz Graphics Context)。</p>
+
+<p>在获取到Graphics Context后，我们可以在Cocoa应用程序中调用任何Quartz 2D的绘制函数。我们同样可以将Quartz 2D与Cocoa绘制操作混合使用。如图2-1是一个在Cocoa视图中用Quartz 2D绘制的实例。绘图由两个长方形组成(一个不透明的红色长方形和半透明的蓝色长方形)。</p>
+
+<p><strong>Figure 2-1  A view in the Cocoa framework that contains Quartz drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<p>为了实现图2-1实例，需要先创建一个Cocoa应用程序。在Interface Builder中，拖动一个Custom View到窗口中，并子类化。然后实现子类视图的，如代码清单2-1所示。视图的drawRect:包含了所有的Quartz绘制代码。</p>
+
+<p><em>注：NSView的drawRect:方法在每次视图需要绘制时自动调用。</em></p>
+
+<p><strong>Listing 2-1  Drawing to a window graphics context</strong></p>
+
+<pre><code>@implementation MyQuartzView
+- (id)initWithFrame:(NSRect)frameRect
+{
+    self = [super initWithFrame:frameRect];
+    return self;
+}
+- (void)drawRect:(NSRect)rec
+{
+    CGContextRef myContext = [[NSGraphicsContext  currentContext] graphicsPort]; //1
+   // ********** Your drawing code here **********       //2
+    CGContextSetRGBFillColor (myContext, 1, 0, 0, 1);     //3
+    CGContextFillRect (myContext, CGRectMake (0, 0, 200, 100 ));   //4
+    CGContextSetRGBFillColor (myContext, 0, 0, 1, .5);     //5
+    CGContextFillRect (myContext, CGRectMake (0, 0, 100, 200));   //6
+}
+@end
+</code></pre>
+
+<p>代码说明：</p>
+
+<ol>
+<li>为视图获取一个Graphics Context</li>
+<li>插入绘图代码的地方。以下四行是使用Quartz 2D函数的例子</li>
+<li>设置完全不透明的红色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(200, 100)</li>
+<li>设置半透明的蓝色填充色。</li>
+<li>填充一个长方形，其原点为(0, 0), 大小为(100, 200)</li>
+</ol>
+
+
+<h2>创建一个PDF Graphics Context</h2>
+
+<p>当创建一个PDF Graphics Context并绘制时，Quartz将绘制操作记录为一系列的PDF绘制命令并写入文件中。我们需要提供一个PDF输出的位置及一个默认的media box(用于指定页面边界的长方形)。图2-2显示了在PDF Graphics Context中绘制及在preview打开PDF的结果。</p>
+
+<p><strong>Figure 2-2  A PDF created by using CGPDFContextCreateWithURL</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/pdf_context_draw.gif" alt="image" /></p>
+
+<p>Quartz 2D API提供了两个函数来创建PDF Graphics Context:</p>
+
+<p>● CGPDFContextCreateWithURL：当你需要用Core Foundation URL指定pdf输出的位置时使用该函数。代码清单2-2显示了该函数的使用方法(代码2-2及后面代码的详细解释略)：</p>
+
+<p><strong>Listing 2-2  Calling CGPDFContextCreateWithURL to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef myOutContext = NULL;
+    CFURLRef url;
+    url = CFURLCreateWithFileSystemPath (NULL, path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL) {
+        myOutContext = CGPDFContextCreateWithURL (url,  inMediaBox,  NULL);
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>● CGPDFContextCreate：当需要将pdf输出发送给数据用户时使用该方法。代码清单2-3显示了该函数的使用方法：</p>
+
+<p><strong>Listing 2-3  Calling CGPDFContextCreate to create a PDF graphics context</strong></p>
+
+<pre><code>CGContextRef MyPDFContextCreate (const CGRect *inMediaBox, CFStringRef path)
+{
+    CGContextRef        myOutContext = NULL;
+    CFURLRef            url;
+    CGDataConsumerRef   dataConsumer;
+    url = CFURLCreateWithFileSystemPath (NULL,  path, kCFURLPOSIXPathStyle, false);
+    if (url != NULL)
+    {
+        dataConsumer = CGDataConsumerCreateWithURL (url);
+        if (dataConsumer != NULL)
+        {
+            myOutContext = CGPDFContextCreate (dataConsumer, inMediaBox, NULL);
+            CGDataConsumerRelease (dataConsumer);
+        }
+        CFRelease(url);
+    }
+    return myOutContext;
+}
+</code></pre>
+
+<p>代码清单2-4显示是如何调用MyPDFContextCreate程序及绘制操作。</p>
+
+<p><strong>Listing 2-4  Drawing to a PDF graphics context</strong></p>
+
+<pre><code>CGRect mediaBox;
+
+mediaBox = CGRectMake (0, 0, myPageWidth, myPageHeight);
+myPDFContext = MyPDFContextCreate (&amp;mediaBox, CFSTR("test.pdf"));
+CFStringRef myKeys[1];
+CFTypeRef myValues[1];
+myKeys[0] = kCGPDFContextMediaBox;
+myValues[0] = (CFTypeRef) CFDataCreate(NULL,(const UInt8 *)&amp;mediaBox, sizeof (CGRect));
+CFDictionaryRef pageDictionary = CFDictionaryCreate(NULL, (const void **) myKeys,
+                                                    (const void **) myValues, 1,
+                                                    &amp;kCFTypeDictionaryKeyCallBacks,
+                                                    &amp; kCFTypeDictionaryValueCallBacks);
+CGPDFContextBeginPage(myPDFContext, &amp;pageDictionary);
+    // ********** Your drawing code here **********
+    CGContextSetRGBFillColor (myPDFContext, 1, 0, 0, 1);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 200, 100 ));
+    CGContextSetRGBFillColor (myPDFContext, 0, 0, 1, .5);
+    CGContextFillRect (myPDFContext, CGRectMake (0, 0, 100, 200 ));
+CGPDFContextEndPage(myPDFContext);
+CFRelease(pageDictionary);
+CFRelease(myValues[0]);
+CGContextRelease(myPDFContext);
+</code></pre>
+
+<p>我们可以将任何内容(图片，文本，绘制路径)绘制到pdf中，并能添加链接及加密。</p>
+
+<h2>创建位图Graphics Context</h2>
+
+<p>一个位图Graphics Context接受一个指向内存缓存(包含位图存储空间)的指针，当我们绘制一个位图Graphics Context时，该缓存被更新。在释放Graphics Context后，我们将得到一个我们指定像素格式的全新的位图。</p>
+
+<p><em>注：位图Graphics Context有时用于后台绘制。CGLayer对象优化了后台绘制，因为Quartz在显卡上缓存了层。</em></p>
+
+<pre><code>iOS提示：iOS应用程序使用了UIGraphicsBeginImageContextWithOptions取代Quartz低层函数。如果使用Quartz创建一下后台bitmap，bitmap Graphics Context使用的坐标系统是Quartz默认的坐标系统。而使用UIGraphicsBeginImageContextWithOptions创建图形上下文，UIKit将会对坐标系统使用与UIView对象的图形上下文一样的转换。这允许应用程序使用相同的绘制代码而不需要担心坐标系统问题。虽然我们的应用程序可以手动调整CTM达到相同的效果，但这种做没有任何好处。
+</code></pre>
+
+<p>我们使用CGBitmapContextCreate来创建位图Graphics Context，该函数有如下参数：</p>
+
+<p>● data：一个指向内存目标的指针，该内存用于存储需要渲染的图形数据。内存块的大小至少需要(bytePerRow * height)字节。</p>
+
+<p>● width：指定位图的宽度，单位是像素(pixel)。</p>
+
+<p>● height：指定位图的高度， 单位是像素(pixel)。</p>
+
+<p>● bitsPerComponent：指定内存中一个像素的每个组件使用的位数。例如，一个32位的像素格式和一个rgb颜色空间，我们可以指定每个组件为8位。</p>
+
+<p>● bytesPerRow：指定位图每行的字节数。</p>
+
+<p>● colorspace：颜色空间用于位图上下文。在创建位图Graphics Context时，我们可以使用灰度(gray), RGB, CMYK, NULL颜色空间。</p>
+
+<p>● bitmapInfo：位图的信息，这些信息用于指定位图是否需要包含alpha组件，像素中alpha组件的相对位置(如果有的话)，alpha组件是否是预乘的，及颜色组件是整型值还是浮点值。</p>
+
+<p>代码清单2-5显示了如何创建位图Graphics Context。当向位图Graphics Context绘图时，Quartz将绘图记录到内存中指定的块中。</p>
+
+<p><strong>Listing 2-5  Creating a bitmap graphics context</strong></p>
+
+<pre><code>CGContextRef MyCreateBitmapContext (int pixelsWide, int pixelsHigh)
+{
+    CGContextRef    context = NULL;
+    CGColorSpaceRef colorSpace;
+    void *          bitmapData;
+    int             bitmapByteCount;
+    int             bitmapBytesPerRow;
+    bitmapBytesPerRow   = (pixelsWide * 4);
+    bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
+    colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    bitmapData = calloc( bitmapByteCount );
+    if (bitmapData == NULL)
+    {
+        fprintf (stderr, "Memory not allocated!");
+        return NULL;
+    }
+    context = CGBitmapContextCreate (bitmapData, pixelsWide, pixelsHigh, 8, bitmapBytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+    if (context== NULL)
+    {
+        free (bitmapData);
+        fprintf (stderr, "Context not created!");
+        return NULL;
+    }
+    CGColorSpaceRelease( colorSpace );
+    return context;
+}
+</code></pre>
+
+<p>代码清单2-6显示了调用MyCreateBitmapContext 创建一个位图Graphics Context，使用位图Graphics Context来创建CGImage对象，然后将图片绘制到窗口Graphics Context中。绘制结果如图2-3所示：</p>
+
+<p><strong>Listing 2-6  Drawing to a bitmap graphics context</strong></p>
+
+<pre><code>CGRect myBoundingBox;
+myBoundingBox = CGRectMake (0, 0, myWidth, myHeight);
+myBitmapContext = MyCreateBitmapContext (400, 300);
+// ********** Your drawing code here ********** 
+CGContextSetRGBFillColor (myBitmapContext, 1, 0, 0, 1);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 200, 100 ));
+CGContextSetRGBFillColor (myBitmapContext, 0, 0, 1, .5);
+CGContextFillRect (myBitmapContext, CGRectMake (0, 0, 100, 200 ));
+myImage = CGBitmapContextCreateImage (myBitmapContext);
+CGContextDrawImage(myContext, myBoundingBox, myImage);
+char *bitmapData = CGBitmapContextGetData(myBitmapContext); 
+CGContextRelease (myBitmapContext);
+if (bitmapData) free(bitmapData); 
+CGImageRelease(myImage);
+</code></pre>
+
+<p><strong>Figure 2-3  An image created from a bitmap graphics context and drawn to a window graphics context</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/cocoa_draw.gif" alt="image" /></p>
+
+<h2>支持的像素格式</h2>
+
+<p>表2-1总结了位图Graphics Context支持的像素格式，相关的颜色空间及像素格式支持的Mac OS X最早版本。像素格式用bpp(每像素的位数)和bpc(每个组件的位数)来表示。表格同时也包含与像素格式相关的位图信息常量。</p>
+
+<p>表2-1：位图Graphics Context支持的像素格式</p>
+
+<p><img src="http://a1.qpic.cn/psb?/V130i6W71atwfr/yA.HJQ2EPTcENE9.Nk8Ql81JN5yDO08pmocm2G.CZ2g!/b/dPvSQHSSIAAA&amp;bo=DwOAAgAAAAADB6w!&amp;rf=viewer_4" alt="image" /></p>
+
+<h2>反锯齿</h2>
+
+<p>位图Graphics Context支持反锯齿，这一操作是人为的较正在位图中绘制文本或形状时产生的锯齿边缘。当位图的分辩率明显低于人眼的分辩率时就会产生锯齿。为了使位图中的对象显得平滑，Quartz使用不同的颜色来填充形状周边的像素。通过这种方式来混合颜色，使形状看起来更平滑。如图2-4显示的效果。我们可以通过调用CGContextSetShouldAntialias来关闭位图Graphics Context的反锯齿效果。反锯齿设置是图形状态的一部分。</p>
+
+<p>可以调用函数CGContextSetAllowsAntialiasing来控制一个特定Graphics Context是否支持反锯齿；false表示不支持。该设置不是图形状态的一部分。当上下文及图形状态设置为true时，Quartz执行反锯齿。</p>
+
+<p><strong>Figure 2-4  A comparison of aliased and anti-aliasing drawing</strong></p>
+
+<p><img src="https://developer.apple.com/library/ios/documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/Art/antialias.jpg" alt="image" /></p>
+
+<h2>获取打印的Graphics Context</h2>
+
+<p>Mac OS X中的Cocoa应用程序通过自定义的NSView子类来实现打印。一个视图通过调用print:方法来进行打印。然后视图以打印机为目标创建一个Graphics Context，并调用drawRect:方法。应用程序使用与在屏幕进行绘制相同的绘制代码。我们同样可以自定义drawRect: 方法将图形绘制到打印机。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/5">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/3">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (58)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

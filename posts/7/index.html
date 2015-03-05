@@ -1,0 +1,1767 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>南峰子的技术博客</title>
+  <meta name="author" content="南峰子">
+      
+  <meta name="baidu-site-verification" content="HoscFhWICI" />
+
+  
+  <meta name="description" content="原文链接：http://www.macresearch.org/tutorial_performance_and_time 在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://southpeak.github.io/posts/7">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="南峰子的技术博客" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+  <!-- googleapis is fucked by gfw -->
+  <script src="http://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!--<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">-->
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">南峰子的技术博客</a></h1>
+  
+    <h2>攀登，一步一个脚印，方能知其乐</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:southpeak.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/categories/ios">iOS开发</a></li>
+  <li><a href="/blog/archives">所有文章</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/23/xing-neng-yu-shi-jian/">性能与时间</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-23T23:55:35+08:00" pubdate data-updated="true">Sep 23<sup>rd</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/23/xing-neng-yu-shi-jian/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原文链接：<a href="http://www.macresearch.org/tutorial_performance_and_time">http://www.macresearch.org/tutorial_performance_and_time</a></p>
+
+<p>在讨论性能之前，先讨论一个重要的话题：时间。为了理解代码中的变化如何影响性能，我们需要一个排序的指标。有许多方法用于时间例程，一些比另一些合适。在本教程中我们将讨论Mach Absolute Time。</p>
+
+<h2>为什么是Mach?</h2>
+
+<p>时间例程依赖于所需要测量的时间域。某些情况下使用诸如clock()或getrusage()函数来做些简单的数学运算就足够了。如果时间例程将用于实际的开发框架之外，可移植性就很重要了。我不使用这些。为什么？</p>
+
+<p>对于我来说，调试代码的典型问题是：</p>
+
+<ol>
+<li>我只需要在即时测试时使用时间例程</li>
+<li>我不喜欢依赖于多种函数来包含不同的时间域。它们的行为可能不一致</li>
+<li>有时我需要一个高精度定时器</li>
+</ol>
+
+
+<h2>欢迎了解mach_absolute_time</h2>
+
+<p>mach_absolute_time是一个CPU/总线依赖函数，返回一个基于系统启动后的时钟”嘀嗒”数。它没有很好的文档定义，但这不应该成为使用它的障碍，因为在MAC OS X上可以确保它的行为，并且，它包含系统时钟包含的所有时间区域。那是否应该在产品代码中使用它呢？可能不应该。但是对于测试，它却恰到好处。</p>
+
+<p>使用mach_absolute_time时需要考虑两个因素：</p>
+
+<ol>
+<li>如何获取当前的Mach绝对时间</li>
+<li>如何将其转换为有意义的数字</li>
+</ol>
+
+
+<h2>获取mach_absolute_time</h2>
+
+<p>这非常简单</p>
+
+<pre><code>#include &lt;stdint.h&gt; 
+uint64_t start = mach_absolute_time();
+uint64_t stop = mach_absolute_time(); 
+</code></pre>
+
+<p>这样就可以了。我们通常获取两个值，以得到这两个时间的时间差。</p>
+
+<h2>将mach_absolute_time时间差转换为秒数</h2>
+
+<p>这稍微有点复杂，因为我们需要获取mach_absolute_time所基于的系统时间基准。如下代码：</p>
+
+<pre><code>#include &lt;stdint.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime - startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {
+        mach_timebase_info_data_t info;
+        kern_return_t err =mach_timebase_info( &amp;info );
+
+        //Convert the timebase into seconds
+        if( err == 0  )
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;
+    }
+
+    return conversion * (double)difference;
+} 
+</code></pre>
+
+<p>这里最重要的是调用mach_timebase_info。我们传递一个结构体以返回时间基准值。最后，一旦我们获取到系统的心跳，我们便能生成一个转换因子。通常，转换是通过分子(info.numer)除以分母(info.denom)。这里我乘了一个1e-9来获取秒数。最后，我们获取两个时间的差值，并乘以转换因子，便得到真实的时间差。</p>
+
+<p>现在我们可能会想，为什么这比用clock好？看起来做了更多的事情。确实是有点，这便是为什么它在一个函数中。我们只需要传递我们的值到函数中并取得答案。</p>
+
+<h2>例子</h2>
+
+<p>让我们写个例子。下面是完整的代码清单(包括mach函数)。可以使用gcc mach.c –o mach来编译它：</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;math.h&gt;
+#include&lt;mach/mach_time.h&gt; 
+
+//Raw mach_absolute_times going in,difference in seconds out
+double subtractTimes( uint64_tendTime, uint64_t startTime )
+{
+    uint64_t difference = endTime -startTime;
+    static double conversion = 0.0;
+
+    if( conversion == 0.0 )
+    {        
+        mach_timebase_info_data_tinfo;        
+        kern_return_terr = mach_timebase_info( &amp;info );                       //Convert the timebaseinto seconds        
+
+        if(err == 0  )                       
+            conversion= 1e-9 * (double) info.numer / (double) info.denom;    
+    }
+
+    return conversion * (double)difference;
+} 
+
+int main()
+{
+    inti, j, count;
+    uint64_t start,stop;
+    doublecurrent = 0.0;
+    doubleanswer = 0.0;
+    doubleelapsed = 0.0;
+    intdim1 = 256;
+    intdim2 = 256;
+    intsize = 4*dim1*dim2;
+
+    //Allocatesome memory and warm it up
+    double *array =(double*)malloc(size*sizeof(double));       
+    for(i=0;i&lt;size;i++)array = (double)i;
+
+    count= 5;     
+    for(i=0;i&lt;count;i++)
+    {              
+        start = mach_absolute_time();                                 
+        //dosome work
+        for(j=0;j&lt;size;j++)
+        {
+            answer+= sqrt(array[j]);
+        }
+        stop = mach_absolute_time();
+        current= subtractTimes(stop,start);
+        printf("Timefor iteration: %1.12lf for answer: %1.12lf\n",current, answer);
+        elapsed+= current;
+    } 
+
+    printf("\nTotaltime in seconds = %1.12lf for answer: %1.12lf\n",elapsed/count,answer);
+    free(array);
+    return 0;
+} 
+</code></pre>
+
+<p>我们在这里做了什么？在这个例子中，我们有一个适当大小的double数组，当中存放了一些数字，然后获取这些数值的和的开方。为了测试，我们迭代了5次这个计算。每次迭代后我们打印花费的时间，并总结了计算所需的运行时间。在我的PowerMac G5(2.5)机器上，我获得如下结果：</p>
+
+<pre><code>[bigmac:~/misc] macresearch% gcc mach.c -omach
+[bigmac:~/misc] macresearch%./mach 
+Time for iteration: 0.006717496412for answer: 89478229.125529855490
+Time for iteration: 0.007274204955for answer: 178956458.251062750816
+Time for iteration: 0.006669191332for answer: 268434687.376589745283
+Time for iteration: 0.006953711252for answer: 357912916.502135872841
+Time for iteration: 0.007582157340for answer: 447391145.627681851387 
+Average time in seconds =0.007039352258 for answer: 447391145.627681851387
+</code></pre>
+
+<p>注意，在这里我没有进行优化，因为编译器有方法避开这样的无脑循环。另外，这只是一个例子。如果是真正的代码，我们会进行优化。</p>
+
+<p>好了，这就是这个例子的两个目的。</p>
+
+<p>首先，我使用的数组大小比我的缓存大。我这样做的目的是因为我们需要注意到数据溢出缓存的情况(正如这个例子一样，至少在我的系统中是这样。如果是在MacPro中，不会出现这种情况)。我们将在以后讨论缓存的事宜。当然，这是一个做作的例子，但有一些东西可供思考。其次，你注意到在内存分配之前我写了一句注释，这是什么意思呢？</p>
+
+<p>这在实际情况下是不需要关心的事情，因为内存总是在需要时已准备好使用。但当做一些小测试时来测试函数的性能时，它却可能是会影响到测试结果的实际问题。</p>
+
+<p>当动态分配内存时，第一次访问内存管理时会将其清0(在OS X中不管使用哪种动态分配函数:malloc, calloc…所有内存在用户使用前都会清0)。内存清零是一种安全预防措施(我们不需要递交一些包含安全信息的内容，如解密密钥)</p>
+
+<p>清零过程产生一个副作用(被系统标记为零填充页面故障)。所以为了让我们的计时更精确些，我们在使用内存之前一次性填充数据，以确保我们不会获取到零填充页面故障的处理时间。</p>
+
+<p>让我们来测试一下，注释下面这行代码</p>
+
+<pre><code>for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>为:</p>
+
+<pre><code>//for(i=0;i&lt;size;i++) array =(double)i;
+</code></pre>
+
+<p>再次运行测试</p>
+
+<pre><code>[bigmac:~/misc] macresearch% ./mach
+Time for iteration: 0.009478866798for answer: 0.000000000000
+Time for iteration: 0.004756880234for answer: 0.000000000000
+Time for iteration: 0.004927868215for answer: 0.000000000000
+Time for iteration: 0.005227029674for answer: 0.000000000000
+Time for iteration: 0.004891864428for answer: 0.000000000000 
+Average time in seconds =0.005856501870 for answer: 0.000000000000
+</code></pre>
+
+<p>注意第一次迭代的时间比后序的时间多了将近一倍。同时还需要注意所有的answer都是0。再次说明内存被清零了。如果我们从堆上获取了内存，我们获取到的是无意义的数值。</p>
+
+<p>最后，但很重要的一点。不要依赖于内存的清零操作。很有可能获取到的内存是从一个静态分配区而来，那么可能会导致如下这样的问题</p>
+
+<pre><code>double array[3][3];
+</code></pre>
+
+<p>在我的系统上的打印结果是：</p>
+
+<pre><code>-1.99844 -1.29321e-231 -1.99844
+-3.30953e-232 -5.31401e+303 0
+1.79209e-313 3.3146e-314 0
+</code></pre>
+
+<p>所以需要特别注意</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/">在ReactiveCocoa中将一个ViewModel绑定到UITableView上</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-21T14:14:19+08:00" pubdate data-updated="true">Sep 21<sup>st</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/21/zai-reactivecocoazhong-jiang-%5B%3F%5D-ge-viewmodelbang-ding-dao-uitableviewshang/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>英文作者Colin Eberhardt，原文可查看<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html">BINDING TO A UITABLEVIEW FROM A REACTIVECOCOA VIEWMODEL</a></p>
+
+<p>这篇博客介绍了一个工具类，这个类将ReactiveCocoa中的ViewModels绑定到UITableView，而不需要通常的datasource和delegate。下面是这个辅助类的使用方法：</p>
+
+<pre><code>// 创建一个cell
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// 将ViewModels的searchResults属性绑定到table view
+[CETableViewBindingHelper bindingHelperForTableView:self.searchResultsTable
+                        sourceSignal:RACObserve(self.viewModel, searchResults)
+                        templateCell:nib];
+</code></pre>
+
+<h2>介绍</h2>
+
+<p>我总是在不断的编写代码：在工作中，在家里，在火车上&hellip;如果我不写代码，我就会觉得不快乐！(注：这才是真正的程序员啊)</p>
+
+<p>在过去的几个月中，我开始在我的工程中越来越多地使用ReactiveCocoa了。这个框架可以用来创建一些非常优雅的解决方案，但同时它非常具有挑战性，因为对于任何一个问题，都有许多可用的解决方案。对于像我这样的编码狂人来说，这再好不过了。</p>
+
+<p>几个月之前，我在Ray Wenderlich的网站上发表了两篇关于ReactiveCocoa的文章(<a href="http://www.raywenderlich.com/62699/reactivecocoa-tutorial-pt1">第一部分</a>、<a href="http://www.raywenderlich.com/62796/reactivecocoa-tutorial-pt2">第二部分</a>)，以及一个<a href="http://www.raywenderlich.com/70598/reactivecocoa-tech-talk-video">Tech Talk</a>视频。这些覆盖了ReactiveCocoa的基本用法，希望能让广大读者熟悉ReactiveCocoa。不过，我收到不少请求，希望能讨论一些使用ReactiveCocoa实现MVVM模式的高级话题。</p>
+
+<p>正因此，我开始写这篇文章。不过，在我发布之前，我想先分享一个已纠缠我很久的问题&hellip;</p>
+
+<p>如果将一个UITableView绑定到一个ReactiveCocoa的ViewModel中？</p>
+
+<h2>视图模式</h2>
+
+<p>我以一个简单的例子开头&mdash;一个允许我们搜索Twitter的ViewModel：</p>
+
+<pre><code>/// A view model which provides a mechanism for searching twitter
+@interface CETwitterSearchViewModel : NSObject
+
+/// The current search text
+@property NSString *searchText;
+
+/// An array of CETweetViewModel instances which indicate
+/// the current search results
+@property NSArray *searchResults;
+
+/// A command which when executed searches twitter using the current searchText
+@property RACCommand *searchCommand;
+
+@end
+</code></pre>
+
+<p>这个ViewModel的实现重用了我在ReactiveCocoa指南第二部分所创建的信号，所以我不在此重复。如果想要看详细的代码，可以在github上查找。</p>
+
+<p>将ViewModel绑定到一个带有UITextField和UIButton的UI是使用ReactiveCocoa最普通不过工作了</p>
+
+<pre><code>// bind the UITextField text updates to the view model
+RAC(self.viewModel, searchText) = self.searchTextField.rac_textSignal;
+
+// bind a button to the search command
+self.searchButton.rac_command = self.viewModel.searchCommand;
+
+// when the search executes hide the keyboard
+[self.viewModel.searchCommand.executing subscribeNext:^(id x) {
+  [self.searchTextField resignFirstResponder];
+}];
+
+// show a network activity indicator when the search is being executed
+RAC([UIApplication sharedApplication], networkActivityIndicatorVisible) =
+  self.viewModel.searchCommand.executing;
+</code></pre>
+
+<p>在上面的代码中，当点击go按钮时，我们处理了诸如隐藏键盘这样的操作，并将网络连接的activity indicator绑定到了searchCommand.executing信号。</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/UIBinding.png" alt="image" /></p>
+
+<p>这样就将ViewModel三个属性中的两个绑定到了UI，到目前为止，一切都还不错！</p>
+
+<p>最后一个属性是searchResults；这个属性是一个数组，包含了搜索结果。我们可以通过RACObserve来观察这个属性的修改，RACObserve创建了一个信号，该信号会在每次更新时发出一个next事件。但不幸的是，我们不能只给UITableView一个对象的数组，并告诉它去渲染自己。</p>
+
+<p>如果我们在StackOverflow上搜索相关帖子，或者查看别人的ReactiveCocoa实例，可以看到传统的方式似乎是我们需要自己去实现table view的代理和数据源。换句话说，我们之前优雅的只需要几行绑定代码的视图类代码会由于需要实现table view的各种逻辑而显示异常丑陋。</p>
+
+<p>不过，我们有更好的方法。</p>
+
+<h2>一个Table View绑定辅助类</h2>
+
+<p>在MVVM模式中，每一个View都由一个ViewModel支撑着。一个视图可能占据整个屏幕(此时我们将一个视图控制器绑定到一个ViewModel)，或者只占据屏幕的一部分。</p>
+
+<p>我们的顶层ViewModel的searchResults属性包含了一个对象数组，其中每一个元素都是一个ViewModel。为了解决这个问题，我们需要的是一个通用的机制来为每个视图创建一个ViewModel，并将这两者绑定在一起。</p>
+
+<p>Nib提供了一种便捷的机制来定义可重用的视图。可以方便地使用nib来定义一个table view的单元格。</p>
+
+<p>一个合理的table view绑定辅助类的接口如下：</p>
+
+<pre><code>/// A helper class for binding view models with NSArray properties
+/// to a UITableView.
+@interface CETableViewBindingHelper : NSObject
+
+- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                      templateCell:(UINib *)templateCellNib;
+
+@end
+</code></pre>
+
+<p>这个绑定类使用提供的table view来渲染由源信号所提供的view model，另外templeteCell定义了视图。让我们来看看这个辅助类的实现：</p>
+
+<pre><code>＠interface CETableViewBindingHelper () &lt;UITableViewDataSource&gt;
+
+＠end
+
+＠implementation CETableViewBindingHelper {
+  UITableView *_tableView;
+  NSArray *_data;
+  UITableViewCell *_templateCell;
+}
+
+- (instancetype)initWithTableView:(UITableView *)tableView
+                     sourceSignal:(RACSignal *)source
+                     templateCell:(UINib *)templateCellNib {
+
+  if (self = [super init]) {
+    _tableView = tableView;
+    _data = [NSArray array];
+
+    // each time the view model updates the array property, store the latest
+    // value and reload the table view
+    [source subscribeNext:^(id x) {
+      _data = x;
+      [_tableView reloadData];
+    }];
+
+    // create an instance of the template cell and register
+    // with the table view
+    _templateCell = [[templateCellNib instantiateWithOwner:nil
+                                          options:nil] firstObject];
+    [_tableView registerNib:templateCellNib
+              forCellReuseIdentifier:_templateCell.reuseIdentifier];
+
+    // use the template cell to set the row height
+    _tableView.rowHeight = _templateCell.bounds.size.height;
+
+    _tableView.dataSource = self;
+  }
+  return self;
+}
+
+#pragma mark - UITableViewDataSource implementation
+
+- (NSInteger)tableView:(UITableView *)tableView
+                       numberOfRowsInSection:(NSInteger)section {
+  return _data.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+                        cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+  id&lt;CEReactiveView&gt; cell = [tableView
+      dequeueReusableCellWithIdentifier:_templateCell.reuseIdentifier];
+  [cell bindViewModel:_data[indexPath.row]];
+  return (UITableViewCell *)cell;
+}
+
+＠end
+</code></pre>
+
+<p>注意，初始化方法是内在逻辑所在。在这里，sourceSignal添加了一个subscriber，这样每次ViewModel的数组属性变化时，当前属性值的引用都会被保存，而table view也会重新加载。同样，也会创建templeteCell实例，来确定单元格的高度。</p>
+
+<p>最后，这个类实现了table view的数据源方法，并通过信号来获取数据。</p>
+
+<p>其中，单元格Cell必须实现以下协议，该协议提供了一个信号方法来将Cell绑定到相应的ViewModel上。</p>
+
+<pre><code>/// A protocol which is adopted by views which are backed by view models.
+@protocol CEReactiveView &lt;NSObject&gt;
+
+/// Binds the given view model to the view
+- (void)bindViewModel:(id)viewModel;
+
+@end 
+</code></pre>
+
+<p>将这个用于实际当中，现在只需要几行代码就可以将一个数组属性绑定到一个table view上了。</p>
+
+<pre><code>// create a cell template
+UINib *nib = [UINib nibWithNibName:@"CETweetTableViewCell" bundle:nil];
+
+// bind the view models 'searchResults' property to a table view
+[[CETableViewBindingHelper alloc]
+      initWithTableView:self.searchResultsTable
+           sourceSignal:RACObserve(self.viewModel, searchResults)
+           templateCell:nib];
+</code></pre>
+
+<p>注意，源信号是通过RACObserver宏来创建的。这个信号在每次属性通过setter来改变都会发出一个next事件。</p>
+
+<p>cell的实现类似于视图控制器；它们的UI控件定义在一个nib文件中并连接到相应的outlet属性。下图是该示例程序中定义cell的nib：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellNib.png" alt="image" /></p>
+
+<p>定义在CEReactiveView协议中的ViewModel绑定方法实现如下：</p>
+
+<pre><code>- (void)bindViewModel:(id)viewModel {
+
+  CETweetViewModel *tweet = (CETweetViewModel *)viewModel;
+
+  // set the tweet 'status' label, sizing it to fit the text
+  self.titleTextField.frame =
+                 CGRectInset(self.titleBackgroundView.frame, 5.0f, 5.0f) ;
+  self.titleTextField.text = tweet.status;
+  [self.titleTextField sizeToFit];
+
+  // set the username
+  self.usernameTextField.text = tweet.username;
+
+  // use signals to fetch the images for each image view
+  self.profileImage.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileBannerUrl]]
+    subscribeNext:^(id x) {
+      self.ghostImageView.image = x;
+    }];
+
+  self.ghostImageView.image = nil;
+  [[self signalForImage:[NSURL URLWithString:tweet.profileImageUrl]]
+    subscribeNext:^(id x) {
+      self.profileImage.image = x;
+    }];
+} 
+</code></pre>
+
+<p>注意，由于CETweetViewModel的属性不会发生变化，因此它们的值直接被拷贝到相应的UI控件上。当然，如果它们的值会改变，我们也可以使用ReactiveCocoa来将两者绑定到一起。</p>
+
+<p>cell的实现同样使用了ReactiveCocoa在后台加载图片：</p>
+
+<pre><code>// creates a signal that fetches an image in the background, delivering
+// it on the UI thread. This signal 'cancels' itself if the cell is re-used before the
+// image is downloaded.
+-(RACSignal *)signalForImage:(NSURL *)imageUrl {
+
+  RACScheduler *scheduler = [RACScheduler 
+                 schedulerWithPriority:RACSchedulerPriorityBackground];
+
+  RACSignal *imageDownloadSignal = [[RACSignal
+    createSignal:^RACDisposable *(id&lt;RACSubscriber&gt; subscriber) {
+      NSData *data = [NSData dataWithContentsOfURL:imageUrl];
+      UIImage *image = [UIImage imageWithData:data];
+      [subscriber sendNext:image];
+      [subscriber sendCompleted];
+      return nil;
+    }] subscribeOn:scheduler];
+
+  return [[imageDownloadSignal
+          takeUntil:self.rac_prepareForReuseSignal]
+          deliverOn:[RACScheduler mainThreadScheduler]];
+
+}
+</code></pre>
+
+<p>通过这种方式，我们就可以让我们的视图控制器保持少量的代码。看，是不是很整洁。</p>
+
+<p>下面是完整的程序的实现效果：</p>
+
+<p><img src="http://www.scottlogic.com/blog/ceberhardt/assets/mvvm/CellBinding.png" alt="image" /></p>
+
+<h2>处理选中事件</h2>
+
+<p>当前的绑定辅助类允许我们在一个table view中渲染ViewModel的数组，但如果我们需要处理选中事件呢？传统的方法是在视图控制器的手动处理，实现table view的代理方法，并执行相关的ViewModel的命令。</p>
+
+<p>不过，这部分逻辑代码也可以放入到绑定辅助类中。</p>
+
+<p>首先，我们在初始化方法中添加一个选择命令：</p>
+
+<pre><code>- (instancetype) initWithTableView:(UITableView *)tableView
+                      sourceSignal:(RACSignal *)source
+                  selectionCommand:(RACCommand *)selection                  
+                      templateCell:(UINib *)templateCellNib;
+</code></pre>
+
+<p>这个初始化方法的实现现在存储了这个命令的引用。辅助类同样也实现了table view的代理，即tableView:didSelectRowAtIndexPath:方法的实现如下：</p>
+
+<pre><code>- (void)tableView:(UITableView *)tableView
+               didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+  [_selection execute:_data[indexPath.row]];
+}
+</code></pre>
+
+<p>即当命令被调用时，会将选择的ViewModel作为执行参数传入。</p>
+
+<p>在顶层ViewModel中，我已经添加了一个命令，这个操作只是简单地记录一下日志：</p>
+
+<pre><code> // create the tweet selected command, that simply logs
+ self.tweetSelectedCommand = [[RACCommand alloc]
+             initWithSignalBlock:^RACSignal *(CETweetViewModel *selected) {
+   NSLog(selected.status);
+   return [RACSignal empty];
+ }];
+</code></pre>
+
+<h2>结论</h2>
+
+<p>希望这个table view绑定辅助类能够帮助那些使用MVVM和ReactiveCocoa来开发iOS应用的开发者们。所有的代码都在github上。如果您有任何意见、想法或建议，请让我知道。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua/">iOS8中扫描Wi-Fi时MAC地址的随机化</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-18T15:51:54+08:00" pubdate data-updated="true">Sep 18<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/18/ios8zhong-sao-miao-wi-fishi-macdi-zhi-de-sui-ji-hua/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>继在iOS6和iOS7系统中面向开发者关闭IP地址和MAC地址的获取后，苹果在iOS8中又出新招：在扫描Wi-Fi时使用随机的、本地管理的MAC地址。基于苹果保护用户隐私的一贯政策，这一步是必然的，它会封死所以获取用户隐私信息的通道。这对于苹果用户来说，当然是件好事。而对于想通过MAC地址来获取用户信息的商家们或黑客们，可能就得另想办法了。我们在此粗略地总结一下iOS对MAC地址所做的随机化处理。</p>
+
+<h2>MAC地址</h2>
+
+<p>在当今基于OSI模型的七层网络系统中，所有有网络接口的设备至少都有一个MAC地址(Media Access Control)。MAC地址位于OSI模型的第二层中，用于帮助网络交换机(有机或无线)确定哪个设备正在传输包及哪个设备应该接收这些包。根据设计，MAC地址应该是唯一的，它被写入到设备的物理网络芯片中，两个不同的设备MAC地址是不一样的。由于像智能手机设备中的无线以太网适配器在广播MAC地址时，采用的的类似于“嘿，这里有没有Wi-Fi”这种形式，所以，我们可以很容易地通过记录这个唯一识别来跟踪用户是否到过某个公共区域。</p>
+
+<h2>随机MAC地址的技术实现</h2>
+
+<p>在WWDC 2014上，Frederic Jacobs在对iOS8新特性的介绍中，提到了如下一条:</p>
+
+<p><img src="http://cdn.arstechnica.net/wp-content/uploads/2014/06/Screen-Shot-2014-06-09-at-10.15.22-AM-1280x551.png" alt="image" /></p>
+
+<p>其大意是在iOS8系统中，Wi-Fi扫描过程中将使用随机的、本地管理的MAC地址，这个MAC地址并不总是设备的真实的MAC地址。</p>
+
+<p>首先需要注意的是MAC地址的随机化。</p>
+
+<p>如果是主动扫描，手机的无线设备会广播一个Probe请求，它包含一个随机的MAC地址。然后手机会等待周围的无线访问接入点(AP)返回Probe响应。一般来说会扫描所有的信道channel1-channel13(或者channel1, 5, 13)，每个信道扫描10ms左右。当然，手机也可以通过点对点的方式将请求(Directed Probe)发送给特定的AP。我们一般隐藏一个无线路由的SSID的方法，就是让这个无线路由不响应广播的Probe，不主动发Beacon，只响应Directed Probe。</p>
+
+<p>而如果是被动扫描，则手机不会广播任何Probe请求，只是周期性地在不同的信道上监听AP发出的beacon包。</p>
+
+<p>另外一个需要注意的是这个随机化是发生在扫描过程中的。而在手机与无线接入点进行关联的过程以及数据传输的过程中，使用MAC地址仍然是设备真实的MAC地址。通常只有在关联阶段才是让AP记录手机MAC地址的阶段，这时候记录的MAC地址，才是将来作为数据传输的MAC地址。</p>
+
+<p>更详细的介绍，可以参看<a href="http://www.zhihu.com/people/qiang-meta">@Qiang Meta</a>在知乎上对《<a href="http://www.zhihu.com/question/24094236?sort=created">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a>》的作答。</p>
+
+<h2>影响</h2>
+
+<p>如果我们是在家中或者在办公区域，我们通常会自己去主动关联无线接入点，那么等到下次再进入这一区域时，我们的手机等设备就会自动去连接无线网络。由于这些Wi-Fi是受我们信任的，所以无所谓。但是当我们到达一个陌生区域或公共区域时，我们的设备就会去搜索可用的无线接入点。这时候就涉及到隐私的问题了。</p>
+
+<p>现在，已经有一些公司已经开发了可以记住所扫描到的MAC地址的Wi-Fi集线器。这种设备可以记住我们的MAC地址，无论我们有没有连接它。这些公司已经在许多地方部署了这些设备，以便他们能在用户不知道的情况下了解用户的一些基本行为。</p>
+
+<p>正如WWDC上所指出的一样，“诸如Euclid或其同行Turnstyle Solutions这样的公司，它们会使用MAC地址这样的数据来记录用户进出商店的一些信息，如人们何时走进一个商店，他们在某个区域停留多久，他们来商店的频率是多少”。而MAC地址的随机化正是为了规避这个问题。</p>
+
+<p>这对于广告商和营销商来说无疑是个不小的打击，如果iOS8设备使用不断变化的MAC地址来广播Wi-Fi Probe请求，则不可能通过MAC地址来跟踪进出商店或其它场所的移动设备。这对于保护用户的隐私来说，又是更进了一步。</p>
+
+<h2>苹果的替代方案</h2>
+
+<p>不过苹果也没有完全关闭追踪用户并向用户推送广告的通道，它推出了另外一种方案&mdash;即基于位置服务的iBeacon。iBeacon已经内置在最近的iOS设备中了。不同于使用设备的MAC地址，iBeacon使用低功耗蓝牙技术来发现那边带有支持iBeacon功能的App的设备，以向这些设备发送广告或通知。iBeacon不同于基于MAC地址跟踪技术(iBeacon发射器不会从设备中获取数据)，它只是在匹配到带有基于iBeacon的应用时，才可以察看设备位置。这样就无法推测出一个用户的习惯，从而保护了用户的隐私了。</p>
+
+<p>当然，苹果在随机化MAC地址时，也综合考虑了用户隐私的泄露与商家基于地理位置来发送广告的需求之间的平衡。那些不愿意使用iBeacon的iOS用户可以通过关闭蓝牙来禁用iBeacon感知功能。在iOS8之前，用户只能通过禁用Wi-Fi来避免自己的设备被通过MAC地址的方式跟踪到。</p>
+
+<h2>总结</h2>
+
+<p>苹果这次对MAC地址的随机化处理，又一次展示了它对保护用户隐私的决定。相信以后类似的事情还会出现。而对于开发商或者开发者来说，在iOS设备上获取用户信息的渠道将会越来越少。我们改变不了苹果，或许也就只能另辟蹊径。</p>
+
+<h2>参考</h2>
+
+<ol>
+<li><a href="http://www.zhihu.com/question/24094236">iOS 8 设备随机 MAC 地址躲避 Wi-Fi 热点的记录追踪，技术上是怎么实现，有何影响？</a></li>
+<li><a href="http://arstechnica.com/apple/2014/06/ios8-to-stymie-trackers-and-marketers-with-mac-address-randomization/">iOS 8 to stymie trackers and marketers with MAC address randomization</a></li>
+<li><a href="http://www.tuicool.com/articles/rUv6Br">Why iOS 8′s MAC address randomizing is a huge win for privacy</a></li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/">对于iOS 8的Size Classes的思考</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-15T17:25:53+08:00" pubdate data-updated="true">Sep 15<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/09/15/dui-yu-ios-8de-size-classesde-si-kao/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原文链接：<a href="http://carpeaqua.com/2014/06/14/thinking-in-terms-of-ios-8-size-classes/">Thinking In Terms Of iOS 8 Size Classes</a></p>
+
+<p>对于最新的iOS8 SDK来说，最性感也最重要的的特性也许莫过于Size Classes了。</p>
+
+<p>在聊Size Classes之前，我们先来回顾下历史。</p>
+
+<h2>一堂历史课</h2>
+
+<p>最初，iOS推出时，我们只有一种设备：iPhone。它的屏幕大小是320*480。不过即使如此，它也是同时支付横屏和竖屏。设计同时支持两个方向的App不是像Mobile Safari或Messages那样，简单地拉伸和重新设置视图的大小。在大多数情况下，我们需要移动按钮和其它控件来让其适应横屏(480*320)。</p>
+
+<p>几年后的现在，我们有了高清屏，iPads和大屏的iPhone。当然，所有这些设备都是支持横屏和竖屏的。解决这个适配问题的传统的方法是在视图控制器和自定义视图中监听设备方向的变化，同时使用多个xib或storyboard。</p>
+
+<p>假设我已经构建了一个同时支持iPhone和iPad的的Glassboard工程。在iOS7和老的版本之前，我们需要针对iPad单独创建一个storyboard，这个storyboard包含重建的视图控制器，outlet属性和target/action。这相当于是重复工作了。任何程序员都知道这不是个好主意。需要在两个不同的地方做相同的改变真是件糟糕的事。</p>
+
+<p>如果是使用代码，则我们需要在代码中检测屏幕方向及设备大小，以便我们能手动调整我们的约束或基于frame的布局。我们的代码会像下面这段代码一样：</p>
+
+<pre><code>UIDevice *device = [UIDevice currentDevice];
+UIDeviceOrientation currentOrientation = device.orientation;
+BOOL isPhone = (device.userInterfaceIdiom == UIUserInterfaceIdiomPhone);
+BOOL isTallPhone = ([[UIScreen mainScreen] bounds].size.height == 568.0);
+if (UIDeviceOrientationIsPortrait(currentOrientation) == YES)
+{
+    // Do Portrait Things
+    if (isPhone == YES)
+    {
+        // Do Portrait Phone Things
+        // Don't deny you've done this at least once.
+        if (isTallPhone)
+        {
+            // iPhone 5+
+        }
+        else
+        {
+            // Old phones
+        }
+    }
+    else
+    {
+        // Do Portrait iPad things.
+    }
+}
+else
+{
+    // Do Landscape Things.
+    if (isPhone == YES)
+    {
+        // Do Landscape Phone Things
+    }
+    else
+    {
+        // Do Landscape iPad things.
+    }
+}
+</code></pre>
+
+<h2>Size Classes</h2>
+
+<p>显然，上面的这些方案都不理想，而且随着苹果新设备的推出，这种情况会变得越来越糟。在今年的WWDC上，苹果除了介绍自动布局的新特性外，我们同样也看到了许多可变iOS模拟器的事例，以及一种处理所有这些问题和屏幕问题的新技术：Size Classes。</p>
+
+<p>Size Classes是iOS使用的一种新的技术，允许我们为给定的设备自定义我们的程序，而且是基于设备的方向和屏幕大小的。</p>
+
+<p>Size Classes有两个目的：</p>
+
+<ol>
+<li>让开发人员和设计人员跳出指定设备的范畴，而是以更广义的范畴来思考问题</li>
+<li>为未来做准备</li>
+</ol>
+
+
+<p>第一个目的也引出了第二个目的。我们看到各种传说，说iPhone 6, 7将会是更大的设备。你也看到了苹果已经开发出了可穿戴设备(Apple Watch)。那么有什么方法可以让为这些设备开发变得更容易呢？那就是Size Classes。</p>
+
+<p>目前从XCode 6上可以看到有四种类型的Size Classes：</p>
+
+<p><img src="http://cdn.carpeaqua.com.s3.amazonaws.com/images/size-classes/size_class_chart.jpg" alt="image" /></p>
+
+<ol>
+<li>宽紧凑(Compact)</li>
+<li>长紧凑</li>
+<li>宽正常(Regular)</li>
+<li>长正常</li>
+</ol>
+
+
+<p>任意时刻，我们的设备都有一个水平方向的Size Class和一个竖直方向的Size Class。这两者都是用来定义布局属性与物征(trait)的集合，以在屏幕上显示内容给用户。</p>
+
+<h2>特征(Traits)</h2>
+
+<p>水平和竖直的Size Class被认为是Traits。结合当前界面术语和显示比例，一起组成了一个特征集合。这不只是包含了指定的控制应该放在屏幕的什么地方。</p>
+
+<p>特征(Trait)也可以用于诸如image assets的东西上(假设你正在使用Asset Catalogs)。在asset中，我们不仅可以包含1x和2x版本，我们还可以为不同的size class指定不同的image asset。在代码中，它看着仍然是相同的UIImage调用。Asset Catalogs负责基于当前的特征集合来渲染合适的图片。</p>
+
+<h2>为Size Classes设计</h2>
+
+<p>Size Classes对于开发人员来讲是一个很好的扩展，因为当我们需要支持多种设备和方向时，它能简化我们的开发。通过简化我们的工作，苹果可以更容易地开发新的设备，并可以让开发者开发能用的应用，而不仅仅是只为iPhone开发程序。</p>
+
+<p>对于开发者来说，最大的改变是我们需要再一次修改我们的关于不同方向的代码。大家已经习惯了吧，谁让我们是开发者呢。</p>
+
+<p>对于设计者来说，特征集合意味着可以少考虑是为哪种设备来做设计，而可以更多的考虑设备的属性。现在，设计者最需要考虑的因素是物理屏幕大小。</p>
+
+<p>由于不能确保每台设备的屏幕尺寸都与Photoshop或测试样机保持一致，所以单独为特定的场景做设计已经站不住脚了。相反，我们的目标是应该为一类设备做通用的设计，主要包括：</p>
+
+<ol>
+<li>手机上的肖像模式</li>
+<li>平板上的肖像模式</li>
+<li>手机上的景观模式</li>
+<li>平板上的景观模式</li>
+</ol>
+
+
+<p>现在iPhone 6来了，它的屏幕也变大了，它拥有与iPhone 4s和5一样的特征集合。当然，iPhone 6的尺寸比原来的手机更大了，但是UI应该基于为指定特征集合定义的界面，来做自适应的处理。</p>
+
+<p>这可能意味着设计者需要推翻自己以前的一些设计，但这就是事实。就像软件开发一样，软件设计需要符合这些约束。新的约束就是我们不能再活在只为特定屏幕尺寸做设计的世界里面了。我们不是要像Android一样，但这是苹果希望我们前进的方向。</p>
+
+<h2>采用Size Classes</h2>
+
+<p>好消息是，Interface Builder可以让我们更好的使用Size Classes。更好的消息是，这些Interface Builder变化是向后兼容的，所以我们可以在合适的地方简化和合并Storyboards和Xibs，而不会落下任何用户。</p>
+
+<p>不太好的消息是，如果需要在代码中使用特征集合，则只支持iOS 8。这是因为苹果很少为老的系统提供新的API接口。这就意味着我们需要在代码中添加一些新的分支来支持不同的系统。例如，为自定义的UIView调整intrinsicContentSize属性。如果系统是iOS8，我们可以使用竖直和水平的size class来确定这个值，但如果设备仍然是iOS 7或老版本，则已存在的代码仍然需要保留。</p>
+
+<p>因为我使用并推荐Interface Builder，所以比起那些仍然活在“将一切写在代码”口号中的人们来说，我的工作明显地减少了。如果你仍然在那个阵营里面，我强烈建议你使用iOS 8, XCode 6和特征集合，并以此为契机加入到Interface Builder阵营中来。这样不仅能减少我们的代码量，同样可以通过提取大量的特征处理到一个视觉UI库来简化代码。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/">MVVM指南二：Flickr搜索深入</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-12T21:12:20+08:00" pubdate data-updated="true">Aug 12<sup>th</sup>, 2014</time>
+        
+        
+           | <a href="/blog/2014/08/12/mvvmzhi-nan-er-:flickrsou-suo-shen-ru/#comments">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>本文由Colin Eberhardt发表于raywenderlich，原文可查看<a href="http://www.raywenderlich.com/74131/mvvm-tutorial-with-reactivecocoa-part-2">MVVM Tutorial with ReactiveCocoa: Part 2/2</a></p>
+
+<p>在第一部分中，我们介绍了MVVM，可以看到ReactiveCocoa如何将ViewModel绑定到各自对应的View上。</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/MVVMReactiveCocoa-700x121.png" alt="image" /></p>
+
+<p>下图是我们程序实现的Flickr搜索功能</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp-671x500.png" alt="image" /></p>
+
+<p>在这一部分中，我们来看看如何在程序的ViewModel中驱动视图间的导航操作。</p>
+
+<p>目前我们的程序允许使用简单的搜索字符串来搜索Flickr。我们可以在<a href="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/FlickrSearchPart1Project1.zip">这里</a>下载程序。Model层使用ReactiveCocoa来提供搜索结果，ViewModel只是简单地记录响应。</p>
+
+<p>现在，我们来看看如何在结果页中进行导航。</p>
+
+<h2>实现ViewModel导航</h2>
+
+<p>当一个Flickr成功返回需要的结果时，程序导航到一个新的视图控制器来显示搜索结果。当前的程序只有一个ViewModel，即RWTFlickrSearchViewModel类。为了实现需要的功能，我们将添加一个新的ViewModel来返回到搜索结果视图。添加新的继承自NSObject的RWTSearchResultsViewModel类到ViewModel分组中，并更新其头文件：</p>
+
+<pre><code>@import Foundation;
+#import "RWTViewModelServices.h"
+#import "RWTFlickrSearchResults.h"
+
+@interface RWTSearchResultsViewModel : NSObject
+
+- (instancetype)initWithSearchResults:(RWTFlickrSearchResults *)results services:(id&lt;RWTViewModelServices&gt;)services;
+
+@property (strong, nonatomic) NSString *title;
+@property (strong, nonatomic) NSArray *searchResults;
+
+@end
+</code></pre>
+
+<p>上述代码添加了描述视图的两个属性，及一个初始化方法。打开RWTSearchResultsViewModel.m并实现初始化方法：</p>
+
+<pre><code>- (instancetype)initWithSearchResults:(RWTFlickrSearchResults *)results services:(id&lt;RWTViewModelServices&gt;)services {
+  if (self = [super init]) {
+    _title = results.searchString;
+    _searchResults = results.photos;
+  }
+  return self;
+}
+</code></pre>
+
+<p>回想一下第一部分，ViewModel在View驱动程序之前就已经生成了。下一步就是将View连接到对应的ViewModel上。</p>
+
+<p>打开RWTSearchResultsViewController.h，导入ViewModel，并添加以下初始化方法：</p>
+
+<pre><code>#import "RWTSearchResultsViewModel.h"
+
+@interface RWTSearchResultsViewController : UIViewController
+
+- (instancetype)initWithViewModel:(RWTSearchResultsViewModel *)viewModel;
+
+@end
+</code></pre>
+
+<p>打开RWTSearchResultsViewController.m，在类的扩展中添加以下私有属性：</p>
+
+<pre><code>@property (strong, nonatomic) RWTSearchResultsViewModel *viewModel;
+</code></pre>
+
+<p>在同一个文件下面，实现初始化方法：</p>
+
+<pre><code>- (instancetype)initWithViewModel:(RWTSearchResultsViewModel *)viewModel {
+  if (self = [super init]) {
+    _viewModel = viewModel;
+  }
+  return self;
+}
+</code></pre>
+
+<p>在这一步中，我们将重点关注导航如何工作，回到视图控制器中将ViewModel绑定到UI中。</p>
+
+<p>现在程序有两个ViewModel，但是现在将面临一个难题。如何从一个ViewModel导航到另一个ViewModel中，也就是在对应的视图控制器中导航。ViewModel不能直接引用视图，所示我们应该怎么做呢？</p>
+
+<p>答案已经在RWTViewModelServices协议中给出来了。它获取了一个Model层的引用，我们将使用这个协议来允许ViewModel来初始化导航。打开RWTViewModelServices.h并添加以下方法来协议中：</p>
+
+<pre><code>- (void)pushViewModel:(id)viewModel;
+</code></pre>
+
+<p>理论上讲，是ViewModel层驱动程序，这一层中的逻辑决定了在View中显示什么，及何时进行导航。这个方法允许ViewModel层push一个ViewModel，该方式与UINavigationController方式类似。在更新协议实现前，我们将在ViewModel层先让这个机制工作。</p>
+
+<p>打开RWTFlickrSearchViewModel.m并导入以下头文件</p>
+
+<pre><code>#import "RWTSearchResultsViewModel.h"
+</code></pre>
+
+<p>同时在同一文件中更新executeSearchSignal的实现：</p>
+
+<pre><code>- (RACSignal *)executeSearchSignal {
+  return [[[self.services getFlickrSearchService]
+    flickrSearchSignal:self.searchText]
+    doNext:^(id result) {
+      RWTSearchResultsViewModel *resultsViewModel =
+        [[RWTSearchResultsViewModel alloc] initWithSearchResults:result services:self.services];
+      [self.services pushViewModel:resultsViewModel];
+    }];
+}
+</code></pre>
+
+<p>上面的代码添加一个addNext操作到搜索命令执行时创建的信号。doNext块创建一个新的ViewModel来显示搜索结果，然后通过ViewModel服务将它push进来。现在是时候更新协议的实现代码了。为了满足这个需求，代码需要一个导航控制器的引用。</p>
+
+<p>打开RWTViewModelServicesImpl.h并添加以下的初始化方法</p>
+
+<pre><code>- (instancetype)initWithNavigationController:(UINavigationController *)navigationController;
+</code></pre>
+
+<p>打开RWTViewModelServicesImpl.m并导入以下头文件：</p>
+
+<pre><code>#import "RWTSearchResultsViewController.h"
+</code></pre>
+
+<p>然后添加一个私有属性：</p>
+
+<pre><code>@property (weak, nonatomic) UINavigationController *navigationController;
+</code></pre>
+
+<p>接下来实现初始化方法：</p>
+
+<pre><code>- (instancetype)initWithNavigationController:(UINavigationController *)navigationController {
+  if (self = [super init]) {
+    _searchService = [RWTFlickrSearchImpl new];
+    _navigationController = navigationController;
+  }
+  return self;
+}
+</code></pre>
+
+<p>这简单地更新了初始化方法来存储传入的导航控制器的引用。最后，添加以下方法：</p>
+
+<pre><code>- (void)pushViewModel:(id)viewModel {
+  id viewController;
+
+  if ([viewModel isKindOfClass:RWTSearchResultsViewModel.class]) {
+    viewController = [[RWTSearchResultsViewController alloc] initWithViewModel:viewModel];
+  } else {
+    NSLog(@"an unknown ViewModel was pushed!");
+  }
+
+  [self.navigationController pushViewController:viewController animated:YES];
+}
+</code></pre>
+
+<p>上面的方法使用提供的ViewModel的类型来确定需要哪个视图。在上面的例子中，只有一个ViewModel-View对，不过我确信你可以看到如何扩展这个模式。导航控制器push了结果视图。</p>
+
+<p>最后，打开RWTAppDelegate.m，定位到createInitialViewController方法的RWTViewModelServicesImpl实例创建的地方，用下面的代码替换创建操作：</p>
+
+<pre><code>self.viewModelServices = [[RWTViewModelServicesImpl alloc] initWithNavigationController:self.navigationController];
+</code></pre>
+
+<p>运行后，点击&#8221;GO&#8221;可以看到程序切换到新的ViewModel/View:</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/BlankView-281x500.png" alt="image" /></p>
+
+<p>现在还是空的。别急，我们一步一步来。不过我们的程序现在有多个ViewModel，其中导航控制器通过ViewModel层来进行控制。我们先回来UI绑定上来。</p>
+
+<h2>渲染结果页</h2>
+
+<p>搜索结果的视图对应的nib文件中有一个UITableView。接下来，我们需要在这个table中渲染ViewModel的内容。打开RWTSearchResultsViewController.m并定位到类扩展。更新它以实现UITableViewDataSource协议：</p>
+
+<pre><code>@interface RWTSearchResultsViewController () &lt;UITableViewDataSource&gt;
+</code></pre>
+
+<p>重写viewDidLoad的代码：</p>
+
+<pre><code>- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  [self.searchResultsTable registerClass:UITableViewCell.class
+                  forCellReuseIdentifier:@"cell"];
+  self.searchResultsTable.dataSource = self;
+
+  [self bindViewModel];
+}
+</code></pre>
+
+<p>这段代码执行table view的初始化并将其绑定到view model。先忘记硬编码的cell标识常量，我们会在后面将其移除。</p>
+
+<p>继续在下面添加bindViewModel代码：</p>
+
+<pre><code>- (void)bindViewModel {
+  self.title = self.viewModel.title;
+}
+</code></pre>
+
+<p>ViewModel有两个属性：上述代码处理的的标题，及渲染到table中的searchResults数组。那么我们该怎么样将数组绑定到table view呢？实际上，我们做不了。ReactiveCocoa可以绑定一些简单的UI控件，但是不能处理这种针对table view的复杂交互。但不需要担心，还有其它方法。卷起袖子开始做吧。</p>
+
+<p>在同一文件中，添加以下两个数据源方法：</p>
+
+<pre><code>- (NSInteger)tableView:(UITableView *)tableView
+ numberOfRowsInSection:(NSInteger)section {
+  return self.viewModel.searchResults.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+         cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+  UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
+  cell.textLabel.text = [self.viewModel.searchResults[indexPath.row] title];
+  return cell;
+}
+</code></pre>
+
+<p>这个就不用说了吧。运行后，效果如下：</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/06/PopulatedTable-281x500.png" alt="image" /></p>
+
+<h2>更好的TableView绑定方法</h2>
+
+<p>table view绑定的缺失会很快导致视图控制器代码的增加。而手动绑定看上去又不太优雅。从概念上讲，在ViewModel的searchResults数组中的每一项是一个ViewMode，每个cell是对应一个ViewModel实例。在<a href="http://www.scottlogic.com/blog/2014/05/11/reactivecocoa-tableview-binding.html">这篇博客</a>中我创建了一个绑定帮助类CETableViewBindingHelper，允许我们定义用于子ViewModel的View，帮助类负责实现数据源协议。我们可以在当前工程的Util分组中找到这个帮助类。</p>
+
+<p>CETableViewBindingHelper的构造方法如下：</p>
+
+<pre><code>+ (instancetype) bindingHelperForTableView:(UITableView *)tableView
+                              sourceSignal:(RACSignal *)source
+                          selectionCommand:(RACCommand *)selection
+                              templateCell:(UINib *)templateCellNib;
+</code></pre>
+
+<p>为了将数组绑定到视图中，我们简单创建一个帮助类的实例。它的参数是：</p>
+
+<ol>
+<li>渲染ViewModel数组的table view</li>
+<li>处理数组变化的信号</li>
+<li>可选的当某行被选中时的命令</li>
+<li>cell视图的nib文件</li>
+</ol>
+
+
+<p>nib文件定义的cell必须实现CEReactiveView协议。工程已经包含了一个table view cell，我们可以用它来渲染搜索结果。打开RWTSearchResultsTableViewCell.h并导入协议：</p>
+
+<pre><code>#import "CEReactiveView.h"
+</code></pre>
+
+<p>采用协议：</p>
+
+<pre><code>@interface RWTSearchResultsTableViewCell : UITableViewCell &lt;CEReactiveView&gt;
+</code></pre>
+
+<p>下一步是实现协议。打开RWTSearchResultsTableViewCell.m并添加头文件</p>
+
+<pre><code>#import &lt;SDWebImage/UIImageView+WebCache.h&gt;
+#import "RWTFlickrPhoto.h"
+</code></pre>
+
+<p>添加以下方法：</p>
+
+<pre><code>- (void)bindViewModel:(id)viewModel {
+  RWTFlickrPhoto *photo = viewModel;
+  self.titleLabel.text = photo.title;
+
+  self.imageThumbnailView.contentMode = UIViewContentModeScaleToFill;
+
+  [self.imageThumbnailView setImageWithURL:photo.url];
+}
+</code></pre>
+
+<p>RWTSearchResultsViewModel的searchResults属性包含RWTFlickrPhoto实例的数组。它们被直接绑定到View，而不是在ViewModel中包装这些Model对象。</p>
+
+<p>bindViewModel方法使用了SDWebImage第三方库，它在后台线程下载并解码图片数据，大大提高了scroll的性能。</p>
+
+<p>最后一步是使用绑定帮助类来渲染table。</p>
+
+<p>打开RWTSearchResultsViewController.m并导入头文件：</p>
+
+<pre><code>#import "CETableViewBindingHelper.h"
+</code></pre>
+
+<p>在该文件下面的代码中移除对UITableDataSource协议的实现，同时移除实现的方法。接下来，添加以下私有属性：</p>
+
+<pre><code>@property (strong, nonatomic) CETableViewBindingHelper *bindingHelper;
+</code></pre>
+
+<p>在viewDidLoad方法中移除table view的配置代码，回归来方法的最初形式：</p>
+
+<pre><code>- (void)viewDidLoad {
+  [super viewDidLoad]; 
+  [self bindViewModel];
+}
+</code></pre>
+
+<p>然后我们在[self bindViewModel]后面添加以下代码：</p>
+
+<pre><code>UINib *nib = [UINib nibWithNibName:@"RWTSearchResultsTableViewCell" bundle:nil];
+
+self.bindingHelper =
+  [CETableViewBindingHelper bindingHelperForTableView:self.searchResultsTable
+                                         sourceSignal:RACObserve(self.viewModel, searchResults)
+                                     selectionCommand:nil
+                                         templateCell:nib];
+</code></pre>
+
+<p>这从nib文件中创建了一个UINib实例并构建了一个绑定帮助类实例，sourceSignal是通过观察ViewModel的searchResults属性改变而创建的。</p>
+
+<p>运行后，得到新的UI：</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/06/UsingTheBindingHelper-281x500.png" alt="image" /></p>
+
+<h2>一些UI特效</h2>
+
+<p>到目前为止，本指南主要关注于根据MVVM模式来构建程序。接下来，我们做点别的吧：添加特效。</p>
+
+<p>iOS7已经发布一年多了，“运动设计(motion design)”获取了更多的青睐，很多设计者现在都喜欢用这种微妙的对话和流体行为。</p>
+
+<p>在这一步中，我们将添加一个图片滑动的特效，很不错的。</p>
+
+<p>打开RWTSearchResultsTableViewCell.h并添加以下方法：</p>
+
+<pre><code>- (void) setParallax:(CGFloat)value;
+</code></pre>
+
+<p>table view将使用这个方法来为每个cell提供视差补偿。</p>
+
+<p>打开RWTSearchResultsTableViewCell.m并实现这个方法：</p>
+
+<pre><code>- (void)setParallax:(CGFloat)value {
+  self.imageThumbnailView.transform = CGAffineTransformMakeTranslation(0, value);
+}
+</code></pre>
+
+<p>很不错，这只是个简单的变换。</p>
+
+<p>打开RWTSearchResultsViewController.m并导入以下头文件：</p>
+
+<pre><code>#import "RWTSearchResultsTableViewCell.h"
+</code></pre>
+
+<p>然后在类扩展中采用UITableViewDelegate协议：</p>
+
+<pre><code>@interface RWTSearchResultsViewController () &lt;UITableViewDataSource, UITableViewDelegate&gt;
+</code></pre>
+
+<p>我们只是添加一个绑定辅助类来将将它自己设置为table view的代理，以便其可以响应行的选择。然而，它也转发代理方法调用到它所有的代理属性，这样我们仍然可以添加自定义行为。</p>
+
+<p>在bindViewModel方法中，设置绑定辅助类代理：</p>
+
+<pre><code>self.bindingHelper.delegate = self;
+</code></pre>
+
+<p>在同一文件下面，添加scrollViewDidScroll的实现：</p>
+
+<pre><code>- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+  NSArray *cells = [self.searchResultsTable visibleCells];
+  for (RWTSearchResultsTableViewCell *cell in cells) {
+    CGFloat value = -40 + (cell.frame.origin.y - self.searchResultsTable.contentOffset.y) / 5;
+    [cell setParallax:value];
+  }
+}
+</code></pre>
+
+<p>table view每次滚动时，调用这个方法。它迭代所有的可见cell，计算用于视差效果的偏移值。这个偏移值依赖于cell在table view中可见部分的位置。</p>
+
+<p>运行后，可得到以下效果</p>
+
+<p><img src="http://cdn5.raywenderlich.com/wp-content/uploads/2014/06/ParallaxAnimation.gif" alt="image" /></p>
+
+<p>现在我们回到业务的View和ViewModel。</p>
+
+<h2>查询评论及收藏计数</h2>
+
+<p>我们应该在列表界面中每幅图片的右下方显示评论的数量和收藏的数量。当前我们只在nib文件中显示一个假数据&#8217;123&#8217;。我们在使用真值来替换这些值前，需要在Model层添加这些功能。添加表示查询Flickr API结果的Model对象的步骤跟前面一样。</p>
+
+<p>在Model分组中添加RWTFlickrPhotoMetadata类，打开RWTFlickrPhotoMetadata.h并添加以下属性：</p>
+
+<pre><code>@property (nonatomic) NSUInteger favorites;
+@property (nonatomic) NSUInteger comments;
+</code></pre>
+
+<p>打开RWTFlickrPhotoMetadata.m并添加description的实现</p>
+
+<pre><code>- (NSString *)description {
+  return [NSString stringWithFormat:@"metadata: comments=%lU, faves=%lU",
+          self.comments, self.favorites];
+}
+</code></pre>
+
+<p>接下来打开RWTFlickrSearch.h并添加以下方法：</p>
+
+<pre><code>- (RACSignal *)flickrImageMetadata:(NSString *)photoId;
+</code></pre>
+
+<p>ViewModel将使用这个方法来请求给定图片的元数据，如评论和收藏。</p>
+
+<p>接下来打开RWTFlickrSearchImpl.m并添加以下头文件：</p>
+
+<pre><code>#import "RWTFlickrPhotoMetadata.h"
+#import &lt;ReactiveCocoa/RACEXTScope.h&gt;
+</code></pre>
+
+<p>接下来实现flickrImageMetadata方法。不幸的是，这里有些小问题：为了获取图片相关的评论数，我们需要调用flickr.photos.getinfo方法；为了获取收藏数，需要调用flickr.photos.getFavorites方法。这让事件变得有点复杂，因为flickrImageMetadata方法需要调用两个接口请求以获取需要的数据。不过，ReactiveCocoa已经为我们解决了这个问题。</p>
+
+<p>添加以下实现：</p>
+
+<pre><code>- (RACSignal *)flickrImageMetadata:(NSString *)photoId {
+
+  RACSignal *favorites = [self signalFromAPIMethod:@"flickr.photos.getFavorites"
+                                          arguments:@{@"photo_id": photoId}
+                                          transform:^id(NSDictionary *response) {
+                                            NSString *total = [response valueForKeyPath:@"photo.total"];
+                                            return total;
+                                          }];
+
+  RACSignal *comments = [self signalFromAPIMethod:@"flickr.photos.getInfo"
+                                        arguments:@{@"photo_id": photoId}
+                                        transform:^id(NSDictionary *response) {
+                                          NSString *total = [response valueForKeyPath:@"photo.comments._text"];
+                                          return total;
+                                        }];
+
+  return [RACSignal combineLatest:@[favorites, comments] reduce:^id(NSString *favs, NSString *coms){
+    RWTFlickrPhotoMetadata *meta = [RWTFlickrPhotoMetadata new];
+    meta.comments = [coms integerValue];
+    meta.favorites = [favs integerValue];
+    return  meta;
+  }];
+}
+</code></pre>
+
+<p>上面的代码使用signalFromAPIMethod:arguments:transform:来从底层的基于ObjectiveFLickr的接口创建信号。上面的代码创建了一个信号对，一个用于获取收藏的数量，一个用于获取评论的数量。</p>
+
+<p>一旦创建了两个信号，combineLatest:reduce:方法生成一个新的信号来组合两者。</p>
+
+<p>这个方法等待源信号的一个next事件。reduce块使用它们的内容来调用，其结果变成联合信号的next事件。</p>
+
+<p>简单明了吧！</p>
+
+<p>不过在庆祝前，我们回到signalFromAPIMethod:arguments:transform:方法来修复之前提到的一个错误。你注意到了么？这个方法为每个请求创建一个新的OFFlickrAPIRequest实例。然后，每个请求的结果是通过代理对象来返回的，而这种情况下，其代理是它自己。结果是，在并发请求的情况下，没有办法指明哪个flickrAPIRequest:didCompleteWithResponse:调用用来响应哪个请求。不过，ObjectiveFlickr代理方法签名在第一个参数中包含了相应请求，所以这个问题很好解决。</p>
+
+<p>在signalFromAPIMethod:arguments:transform:中，使用下面的代码来替换处理successSignal的管道：</p>
+
+<pre><code>@weakify(flickrRequest)
+[[[[successSignal
+  filter:^BOOL(RACTuple *tuple) {
+    @strongify(flickrRequest)
+    return tuple.first == flickrRequest;
+  }]
+  map:^id(RACTuple *tuple) {
+    return tuple.second;
+  }]
+  map:block]
+  subscribeNext:^(id x) {
+    [subscriber sendNext:x];
+    [subscriber sendCompleted];
+  }];
+</code></pre>
+
+<p>这只是简单地添加一个filter操作来移除任何与请求相关的代理方法调用，而不是生成当前的信号。</p>
+
+<p>最后一步是在ViewModel层中使用信号。</p>
+
+<p>打开RWTSearchResultsViewModel.m并导入以下头文件：</p>
+
+<pre><code>#import "RWTFlickrPhoto.h"
+</code></pre>
+
+<p>在同一文件中的初始化的末尾添加以下代码：</p>
+
+<pre><code>RWTFlickrPhoto *photo = results.photos.firstObject;
+RACSignal *metaDataSignal = [[services getFlickrSearchService]
+                            flickrImageMetadata:photo.identifier];
+    [metaDataSignal subscribeNext:^(id x) {
+     NSLog(@"%@", x);
+   }];
+</code></pre>
+
+<p>这段代码测试了新添加的方法，该方法从返回的结果中的第一幅图片获取图片元数据。运行程序后，会在控制台输出以下信息：</p>
+
+<pre><code>2014-06-04 07:27:26.813 RWTFlickrSearch[76828:70b] metadata: comments=120, faves=434
+</code></pre>
+
+<h2>获取可见cell的元数据</h2>
+
+<p>我们可以扩展当前代码来获取所有搜索结果的元数据。然而，如果我们有100条结果，则需要立即发起200个请求，每幅图片2个请求。大多数API都有些限制，这种调用方式会阻塞我们的请求调用，至少是临时的。</p>
+
+<p>在一个table中，我们只需要获取当前显示的单元格所对象的结果的元数据。所以，如何实现这个行为呢？当然，我们需要一个ViewModel来表示这些数据。当前RWTSearchResultsViewModel暴露了一个绑定到View的RWTFlickrPhoto实例的数组，它们的暴露给View的Model层对象。为了添加这种可见性，我们将给ViewModel中的model对象添加view-centric状态。</p>
+
+<p>在ViewModel分组中添加RWTSearchResultsItemViewModel类，打开头文件并各以下代码更新：</p>
+
+<pre><code>@import Foundation;
+#import "RWTFlickrPhoto.h"
+#import "RWTViewModelServices.h"
+
+@interface RWTSearchResultsItemViewModel : NSObject
+
+- (instancetype) initWithPhoto:(RWTFlickrPhoto *)photo services:(id&lt;RWTViewModelServices&gt;)services;
+
+@property (nonatomic) BOOL isVisible;
+@property (strong, nonatomic) NSString *title;
+@property (strong, nonatomic) NSURL *url;
+@property (strong, nonatomic) NSNumber *favorites;
+@property (strong, nonatomic) NSNumber *comments;
+
+@end
+</code></pre>
+
+<p>看看初始化方法，这个ViewModel封装了一个RWTFlickrPhoto模型对象的实例。这个ViewModel包含以下几类属性：</p>
+
+<ol>
+<li>表示底层Model属性的属性(title, url)</li>
+<li>当获取到元数据时动态更新的属性(favorites, comments)</li>
+<li>isVisible，用于表示ViewModel是否可见</li>
+</ol>
+
+
+<p>打开RWTSearchResultsItemViewModel.m并导入以下头文件：</p>
+
+<pre><code>#import &lt;ReactiveCocoa/ReactiveCocoa.h&gt;
+#import &lt;ReactiveCocoa/RACEXTScope.h&gt;
+#import "RWTFlickrPhotoMetadata.h"
+</code></pre>
+
+<p>接下来添加几个私有属性：</p>
+
+<pre><code>@interface RWTSearchResultsItemViewModel ()
+
+@property (weak, nonatomic) id&lt;RWTViewModelServices&gt; services;
+@property (strong, nonatomic) RWTFlickrPhoto *photo;
+
+@end
+</code></pre>
+
+<p>然后实现初始化方法：</p>
+
+<pre><code>- (instancetype)initWithPhoto:(RWTFlickrPhoto *)photo services:(id&lt;RWTViewModelServices&gt;)services {
+  self = [super init];
+  if (self) {
+    _title = photo.title;
+    _url = photo.url;
+    _services = services;
+    _photo = photo;
+
+    [self initialize];
+  }
+  return  self;
+}
+</code></pre>
+
+<p>这基于Model对象的title和url属性，然后通过私有属性来存储服务和图片的引用。</p>
+
+<p>接下来添加initialize方法。准备好，这里有些有趣的事情会发生。</p>
+
+<pre><code>- (void)initialize {
+  RACSignal *fetchMetadata =
+    [RACObserve(self, isVisible)
+     filter:^BOOL(NSNumber *visible) {
+       return [visible boolValue];
+     }];
+
+  @weakify(self)
+  [fetchMetadata subscribeNext:^(id x) {
+    @strongify(self)
+    [[[self.services getFlickrSearchService] flickrImageMetadata:self.photo.identifier]
+     subscribeNext:^(RWTFlickrPhotoMetadata *x) {
+       self.favorites = @(x.favorites);
+       self.comments = @(x.comments);
+     }];
+  }];
+}
+</code></pre>
+
+<p>这个方法的第一部分通过监听isVisible属性和过滤true值来创建一个名为fetchMetadata的信号。结果，信号在isVisible属性设置为true时发出next事件。第二部分订阅这个信号以初始化到flickrImageMetadata方法的请求。当这个嵌套的信号发送next事件时，favorite和comment属性使用这个结果来更新值。</p>
+
+<p>总的来说，当isVisible设置为true时，发送Flickr API请求，并在将来某个时刻更新comments和favorites属性。</p>
+
+<p>为了使用新的ViewModel，打开RWTSearchResultsViewModel.m并导入头文件：</p>
+
+<pre><code>#import &lt;LinqToObjectiveC/NSArray+LinqExtensions.h&gt;
+#import "RWTSearchResultsItemViewModel.h"
+</code></pre>
+
+<p>在初始化方法中，移除当前设置_searchResults的代码，并使用以下代码：</p>
+
+<pre><code>_searchResults =
+  [results.photos linq_select:^id(RWTFlickrPhoto *photo) {
+    return [[RWTSearchResultsItemViewModel alloc]
+              initWithPhoto:photo services:services];
+  }];
+</code></pre>
+
+<p>这只是简单地使用一个ViewModel来包装每一个Model对象。</p>
+
+<p>最后一步是通过视图来设置isVisible对象，并使用这些新的属性。</p>
+
+<p>打开RWTSearchResultsTableViewCell.m并导入以下头文件：</p>
+
+<pre><code>#import "RWTSearchResultsItemViewModel.h"
+</code></pre>
+
+<p>然后在下面的bindViewModel方法的第一行添加以下代码：</p>
+
+<pre><code>RWTSearchResultsItemViewModel *photo = viewModel;
+</code></pre>
+
+<p>并在访方法中添加以下代码：</p>
+
+<pre><code>[RACObserve(photo, favorites) subscribeNext:^(NSNumber *x) {
+  self.favouritesLabel.text = [x stringValue];
+  self.favouritesIcon.hidden = (x == nil);
+}];
+
+[RACObserve(photo, comments) subscribeNext:^(NSNumber *x) {
+  self.commentsLabel.text = [x stringValue];
+  self.commentsIcon.hidden = (x == nil);
+}];
+
+photo.isVisible = YES;
+</code></pre>
+
+<p>这个代码监听了新的comments和favorites属性，当它们更新lable和image时会更新。最后，ModelView的isVisible属性被设置成YES。table view绑定辅助类只绑定可见的单元格，所以只有少部分ViewModel去请求元数据。</p>
+
+<p>运行后，以看到以下效果：</p>
+
+<p><img src="http://cdn4.raywenderlich.com/wp-content/uploads/2014/06/WithMetadata-333x500.png" alt="image" /></p>
+
+<p>是不是很酷？</p>
+
+<h2>节流</h2>
+
+<p>慢着，还有一个问题没有解决。当我们快速地滚动滑动栏，如果不做特殊，会同时加载大量的元数据和图片，这将明显地降低我们程序的性能。为了解决这个问题，程序应该只在照片显示在界面上的的时候去初始化元数据请求。现在ViewModel的isVisible属性被设置为YES，但不会被设置成NO。我们现在来处理这个问题。</p>
+
+<p>打开RWTSearchResultsTableViewCell.m，然后修改刚才添加到bindViewModel:的代码，以设置isVisible属性：</p>
+
+<pre><code>photo.isVisible = YES;
+[self.rac_prepareForReuseSignal subscribeNext:^(id x) {
+  photo.isVisible = NO;
+}];
+</code></pre>
+
+<p>当ViewModel绑定到View时，isVisible属性会被设置成YES。但是当cell被移出table view进行重用时会被设置成NO。我们通过rac_prepareForReuseSignal信号来实现这步操作。</p>
+
+<p>返回到RWTSearchResultsItemViewModel中。ViewModel需要监听isVisible属性的修改，当属性被设置成YES后一秒钟，将发送一个元数据的请求。</p>
+
+<p>在RWTSearchResultsItemViewModel.m中，更新initialize方法，移除fetchMetadata信号的创建。使用以下代码来替换：</p>
+
+<pre><code>// 1. 通过监听isVisible属性来创建信号。该信号发出的第一个next事件将包含这个属性的初始状态。
+// 因为我们只关心这个值的改变，所以在第一个事件上调用skip操作。
+RACSignal *visibleStateChanged = [RACObserve(self, isVisible) skip:1];
+
+// 2. 通过过滤visibleStateChanged信号来创建一个信号对，一个标识从可见到隐藏的转换，另一个标识从隐藏到可见的转换
+RACSignal *visibleSignal = [visibleStateChanged filter:^BOOL(NSNumber *value) {
+  return [value boolValue];
+}];
+
+RACSignal *hiddenSignal = [visibleStateChanged filter:^BOOL(NSNumber *value) {
+  return ![value boolValue];
+}];
+
+// 3. 这里是最神奇的地方。通过延迟visibleSignal信号1秒钟来创建fetchMetadata信号，在获取元数据之前暂停一会。
+// takeUntil操作确保如果cell在1秒的时间间隔内又一次隐藏时，来自visibleSignal的next事件被挂起且不获取元数据。
+RACSignal *fetchMetadata = [[visibleSignal delay:1.0f]
+                           takeUntil:hiddenSignal];
+</code></pre>
+
+<p>你可以想像一下如果没有ReactiveCocoa，这会有多复杂。</p>
+
+<p>运行程序，现在我们和滑动显示平滑多了。</p>
+
+<h2>错误处理</h2>
+
+<p>当前搜索Flickr的代码只处理了OFFlickrAPIRequestDelegate协议中的flickrAPIRequest:didCompleteWithResponse:方法。不过，这样网络请求由于多种原因会出错。一个好的应用程序必须处理这些错误，以给用户一个良好的用户体验。代理同时定义了flickrAPIRequest:didFailWithError:方法，这个方法在请求出错时调用。我们将用这个方法来处理错误并显示一个提示框给用户。</p>
+
+<p>我们之前讲过信号会发出next，completed和错误事件。其结果是，我们并不需要做太多的事情。</p>
+
+<p>打开RWTFlickrSearchImpl.m，并定位到signalFromAPIMethod:arguments:transform:方法。在这个方法中，在创建successSignal变量前添加以下代码：</p>
+
+<pre><code>RACSignal *errorSignal =
+  [self rac_signalForSelector:@selector(flickrAPIRequest:didFailWithError:)
+                 fromProtocol:@protocol(OFFlickrAPIRequestDelegate)];
+
+[errorSignal subscribeNext:^(RACTuple *tuple) {
+  [subscriber sendError:tuple.second];
+}];
+</code></pre>
+
+<p>上面的代码从代理方法中创建了一个信号，订阅了该信号，如果发生错误则发送一个错误。传递给subscribeNext块的元组包含传递给flickrAPIRequest:didFailWithError:方法的变量。结果是，tuple.second获取源错误并使用它来为错误事件服务。这是一个很好的解决方案，你觉得呢？不是所有的API请求都有内建的错误处理。接下来我们使用它。</p>
+
+<p>RWTFlickrSearchViewModel不直接暴露信号给视图。相反它暴露一个状态和一个命令。我们需要扩展接口来提供错误报告。</p>
+
+<p>打开RWTFlickrSearchViewModel.h并添加以下属性：</p>
+
+<pre><code>@property (strong, nonatomic) RACSignal *connectionErrors;
+</code></pre>
+
+<p>打开RWTFlickrSearchViewModel.m并添加以下代码到initialize实现的最后：</p>
+
+<pre><code>self.connectionErrors = self.executeSearch.errors;
+</code></pre>
+
+<p>executeSearch属性是一个ReactiveCococa框架的RACCommand对象。RACCommand类有一个errors属性，用于发送命令执行时产生的任何错误。</p>
+
+<p>为了处理这些错误，打开RWTFlickrSearchViewController.m并添加以下的代码到initWithViewModel:方法中：</p>
+
+<pre><code>[_viewModel.connectionErrors subscribeNext:^(NSError *error) {
+  UIAlertView *alert =
+  [[UIAlertView alloc] initWithTitle:@"Connection Error"
+                             message:@"There was a problem reaching Flickr."
+                            delegate:nil
+                   cancelButtonTitle:@"OK"
+                   otherButtonTitles:nil];
+  [alert show];
+}];
+</code></pre>
+
+<p>运行后，处理错误的效果如下：</p>
+
+<p><img src="http://cdn2.raywenderlich.com/wp-content/uploads/2014/06/ErrorMessages-281x500.png" alt="image" /></p>
+
+<p>想知道为什么获取收藏和评论的请求不报告错误么？这是由设计决定的，主要是这些不会影响程序的可用性。</p>
+
+<h2>添加最近搜索列表</h2>
+
+<p>用户可能会回去查看一些重复的图片。所以，我们可以做些简化操作。回想一下本文的开头，最后的程序在搜索输入框下面有一个显示最近搜索结果的列表。</p>
+
+<p><img src="http://cdn1.raywenderlich.com/wp-content/uploads/2014/06/FinishedApp-671x500.png" alt="image" /></p>
+
+<p>现在我们只需要添加上这个功能，这次我要向你发起一个挑战了。我将这一部分的实现留给读者您来处理，来练习练习MVVM技能吧。</p>
+
+<p>在开始之前，我在这些做些总结：</p>
+
+<ol>
+<li>我将创建一个ViewModel来表示每个先前的搜索，它包含一些属性，这些属性包括搜索文本，匹配的数量和第一个匹配的图片</li>
+<li>我将修改RWTFlickrSearchViewModel来暴露这些新的ViewModel对象的数组做为一个属性。</li>
+<li>使用CETableViewBindingHelper可以非常简单地渲染ViewModel的数组，我已经添加了一个合适的cell(RWTRecentSearchItemTableViewCell)到工程中。</li>
+</ol>
+
+
+<h2>接下来何去何从？</h2>
+
+<p>在<a href="https://github.com/ColinEberhardt/ReactiveFlickrSearch">这里</a>可以下载最终的程序。这两部分的内容已经包含了很多内容，这里我们可以好好回顾一下主要点：</p>
+
+<ol>
+<li>MVVM是MVC模式的一个变种，它正逐渐流行起来</li>
+<li>MVVM模式让View层代码变得更清晰，更易于测试</li>
+<li>严格遵守View=>ViewModel=>Model这样一个引用层次，然后通过绑定来将ViewModel的更新反映到View层上。</li>
+<li>ViewModel层决不应该维护View的引用</li>
+<li>ViewModel层可以看作是视图的模型(model-of-the-view)，它暴露属性，以直接反映视图的状态，以及执行用户交互相关的命令。</li>
+<li>Model层暴露服务。</li>
+<li>针对MVVM程序的测试可以在没有UI的情况下运行。</li>
+<li>ReactiveCocoa框架提供强大的机制来将ViewModel绑定到View。它同时也广泛地使用在ViewModel和Model层中。</li>
+</ol>
+
+
+<p>怎么样，下次创建程序的时候，是不是试试MVVM？试试吧。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/8">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/posts/6">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    
+<section>
+<h1>分类</h1>
+<ul>
+  <li><a href='/blog/categories/ios'>ios (58)</a></li>
+  <li><a href='/blog/categories/network'>network (3)</a></li>
+  <li><a href='/blog/categories/reactivecocoa'>reactivecocoa (3)</a></li>
+  <li><a href='/blog/categories/swift'>swift (7)</a></li>
+  <li><a href='/blog/categories/system'>system (1)</a></li>
+  <li><a href='/blog/categories/网络'>网络 (8)</a></li>
+</ul>
+</section>
+
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/fan-yi-pian-:ios-8-handoff-tutorial/">翻译篇：iOS 8 Handoff Tutorial</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/11/nscache/">NSCache</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/yuan-ma-pian-:sdwebimage/">源码篇：SDWebImage</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-er/">NSObject之二</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/31/nsobjectzhi-%5B%3F%5D/">NSObject之一</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/25/gong-ju-pian-:lldbdiao-shi-qi/">工具篇：LLDB调试器</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/yuan-ma-pian-:mantle/">源码篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/11/gong-ju-pian-:mantle/">工具篇：Mantle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-san-:pdfwen-dang-de-chuang-jian-,-xian-shi-ji-zhuan-huan/">Quartz 2D编程指南之十三：PDF文档的创建、显示及转换</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/08/quartz-2dbian-cheng-zhi-nan-zhi-shi-er-:core-graphicsceng-hui-zhi/">Quartz 2D编程指南之十二：Core Graphics层绘制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - 南峰子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1000523916'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1000523916%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
